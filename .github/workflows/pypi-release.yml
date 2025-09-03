@@ -1,0 +1,66 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper version detection
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel twine setuptools>=61.0.0
+
+      - name: Display Python & package versions
+        run: |
+          python --version
+          pip --version
+          pip list
+
+      - name: Clean any previous builds
+        run: |
+          rm -rf dist/ build/ *.egg-info/
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: List build artifacts
+        run: |
+          ls -la dist/
+
+      - name: Check package metadata with twine
+        run: |
+          twine check dist/*
+
+      - name: Inspect wheel contents
+        run: |
+          unzip -l dist/*.whl
+
+      - name: Publish to PyPI
+        if: success()
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+          repository-url: https://upload.pypi.org/legacy/
+          verbose: true
+          skip-existing: true

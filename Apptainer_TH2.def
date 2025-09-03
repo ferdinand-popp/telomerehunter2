@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: ubuntu:latest
+From: python:3.9-slim
+
+%post
+    # Update package repositories and install necessary packages
+    apt-get update
+    apt-get install -y --no-install-recommends git
+
+    # Clone the Python package from GitLab
+    git clone https://github.com/ferdinand-popp/telomerehunter2.git
+
+    # Install the Python package using pip
+    pip install /telomerehunter2/. --no-cache-dir
+
+%runscript
+    # Start a bash command line when the container is run
+    exec /bin/bash

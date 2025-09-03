@@ -1,0 +1,20 @@
+# general things to ignore
+build/
+dist/
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+core.*
+
+results/
+data/
+.venv/
+*.sif
+/.idea
+/tests/case1/
+/tests/case2/
+.tox/
+
