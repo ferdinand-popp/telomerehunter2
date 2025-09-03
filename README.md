@@ -116,13 +116,35 @@ pip install -r requirements.txt
 
 ## Container Usage
 
-**Docker:**  
+[![Docker Pulls](https://img.shields.io/docker/pulls/fpopp22/telomerehunter2)](https://hub.docker.com/r/fpopp22/telomerehunter2)
+
+**Docker (recommended):**
+
+*Build locally:*
+```bash
+docker build -t telomerehunter2 .
+docker run --rm -it -v /data:/data telomerehunter2 telomerehunter2 -ibt /data/sample.bam -o /data/results -p SampleID -b /data/hg19_cytoBand.txt
+```
+
+*Pull from Docker Hub:*
 ```bash
 docker pull fpopp22/telomerehunter2
+```
+
+*Run from Docker Hub:*
+```bash
 docker run --rm -it -v /data:/data fpopp22/telomerehunter2 telomerehunter2 -ibt /data/sample.bam -o /data/results -p SampleID -b /data/hg19_cytoBand.txt
 ```
 
-**Apptainer/Singularity:**  
+**Apptainer/Singularity:**
+
+*Build locally:*
+```bash
+apptainer build telomerehunter2.sif Apptainer_TH2.def
+apptainer run telomerehunter2.sif telomerehunter2 -ibt sample.bam -o results -p SampleID -b hg19_cytoBand.txt
+```
+
+*Pull from Docker Hub (as Apptainer image):*
 ```bash
 apptainer pull docker://fpopp22/telomerehunter2:latest
 apptainer run telomerehunter2_latest.sif telomerehunter2 ...

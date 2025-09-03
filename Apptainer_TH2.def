@@ -1,14 +1,13 @@
 Bootstrap: docker
-From: ubuntu:latest
-From: python:3.9-slim
+From: python:3.12-slim
 
 %post
     # Update package repositories and install necessary packages
     apt-get update
     apt-get install -y --no-install-recommends git
 
-    # Clone the Python package from GitLab
-    git clone https://github.com/ferdinand-popp/telomerehunter2.git
+    # Copy the local project into the container
+    cp -r /mnt/context/telomerehunter2 /telomerehunter2
 
     # Install the Python package using pip
     pip install /telomerehunter2/. --no-cache-dir
