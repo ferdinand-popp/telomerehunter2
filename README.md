@@ -1,8 +1,11 @@
 # TelomereHunter2
 
-[![PyPI version](https://badge.fury.io/py/telomerehunter2.svg)](https://badge.fury.io/py/telomerehunter2)
+[![PyPI version](https://img.shields.io/pypi/v/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
-[![Build Status](https://img.shields.io/github/workflow/status/fpopp22/telomerehunter2/CI)](https://github.com/fpopp22/telomerehunter2/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ferdinand-popp/telomerehunter2/pypi-release.yml?branch=main)](https://github.com/ferdinand-popp/telomerehunter2/actions)
+[![Python Versions](https://img.shields.io/pypi/pyversions/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
+[![Last Commit](https://img.shields.io/github/last-commit/ferdinand-popp/telomerehunter2.svg)](https://github.com/ferdinand-popp/telomerehunter2/commits/main)
 
 TelomereHunter2 is a Python-based tool for estimating telomere content and analyzing telomeric variant repeats (TVRs) from genome sequencing data. It supports BAM/CRAM files, flexible telomere repeat and reference genome inputs, and provides outputs for bulk and single-cell genome sequencing data.
 
