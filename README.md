@@ -106,7 +106,8 @@ See `tests/run_sc_atac.py` for examples.
 ## Dependencies
 
 - Python >=3.6
-- pysam, numpy, pandas, plotly, kaleido, PyPDF2
+- pysam, numpy, pandas, plotly, PyPDF2
+- For static image export: kaleido (requires chrome/chromium)
 - Sinto (for sc-seq, install with `[sc]` extra)
 - Docker/Apptainer (optional)
 
