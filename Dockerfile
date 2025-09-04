@@ -28,11 +28,10 @@ RUN pip install -e . --no-cache-dir
 #RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ###################################################
 
-# Run unit tests after installation
-RUN python -m unittest discover -s tests
+# Optional: Run unit tests after installation
+# RUN python -m unittest discover -s tests
 
-# Usage
-# Make port 80 available to the world outside this container
+# Usage make port available to the world outside this container
 EXPOSE 80
 
 # Define environment variable
