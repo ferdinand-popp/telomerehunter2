@@ -6,6 +6,7 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
 [![Last Commit](https://img.shields.io/github/last-commit/ferdinand-popp/telomerehunter2.svg)](https://github.com/ferdinand-popp/telomerehunter2/commits/main)
+[![Docker Pulls](https://img.shields.io/docker/pulls/fpopp22/telomerehunter2)](https://hub.docker.com/r/fpopp22/telomerehunter2)
 
 TelomereHunter2 is a Python-based tool for estimating telomere content and analyzing telomeric variant repeats (TVRs) from genome sequencing data. It supports BAM/CRAM files, flexible telomere repeat and reference genome inputs, and provides outputs for bulk and single-cell genome sequencing data.
 
@@ -116,8 +117,6 @@ pip install -r requirements.txt
 
 ## Container Usage
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/fpopp22/telomerehunter2)](https://hub.docker.com/r/fpopp22/telomerehunter2)
-
 **Docker (recommended):**
 
 *Build locally:*
@@ -141,7 +140,8 @@ docker run --rm -it -v /data:/data fpopp22/telomerehunter2 telomerehunter2 -ibt 
 *Build locally:*
 ```bash
 apptainer build telomerehunter2.sif Apptainer_TH2.def
-apptainer run telomerehunter2.sif telomerehunter2 -ibt sample.bam -o results -p SampleID -b hg19_cytoBand.txt
+# mount data needed
+apptainer run telomerehunter2.sif telomerehunter2 -ibt /data/sample.bam -o /data/results -p SampleID -b /data/hg19_cytoBand.txt
 ```
 
 *Pull from Docker Hub (as Apptainer image):*
