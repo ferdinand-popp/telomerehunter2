@@ -19,18 +19,13 @@ TelomereHunter2 is a Python-based tool for estimating telomere content and analy
 - Docker and Apptainer/Singularity containers
 - Single cell sequencing support (e.g. scATAC-seq; barcode splitting and per-cell analysis)
 - Robust input handling and exception management
+- Minor changes: skipping the tvrs nrom per 100 bp, improved detection of GXXGGG TVRs, read lengths are estimated from first 1000 reads, added TRPM, 
 
 ## Installation
 
-**Classic setup (bulk analysis):**  
+**Classic setup:**  
 ```bash
 pip install telomerehunter2
-```
-
-**Single-cell setup (sc analysis):**  
-Requires [sinto](https://github.com/timoast/sinto) for barcode splitting:  
-```bash
-pip install 'telomerehunter2[sc]'
 ```
 
 **From source:**  
@@ -41,9 +36,6 @@ cd telomerehunter2
 python -m venv venv
 source venv/bin/activate
 pip install -e . --no-cache-dir
-
-# For single-cell support:
-pip install -e .[sc] --no-cache-dir
 
 # With poetry:
 git clone https://github.com/ferdinand-popp/telomerehunter2.git
@@ -62,13 +54,23 @@ See [Container Usage](#container-usage) for Docker/Apptainer instructions.
 
 ## Quickstart
 
+### Bulk Analysis
+
 ```bash
 telomerehunter2 -ibt sample.bam -o results/ -p SampleID -b telomerehunter2/cytoband_files/hg19_cytoBand.txt
 ```
-For all options:  
+For all options:
 ```bash
 telomerehunter2 --help
 ```
+
+### Single Cell Analysis
+
+```bash
+telomerehunter2_sc -ibt sample.bam -o results/ -p SampleID -b telomerehunter2/cytoband_files/cytoband.txt --min-reads-per-barcode 10000
+```
+
+See [Bulk Analysis](#bulk-analysis) and [Single cell sequencing Analysis](#single-cell-sequencing-analysis) below for more details.
 
 ## Usage
 
@@ -83,12 +85,15 @@ telomerehunter2 --help
 
 ### Single cell sequencing Analysis
 
-Requires BAM with CB barcode tag and Sinto for splitting:  
-Install with `pip install 'telomerehunter2[sc]'`  
+TelomereHunter2 now supports direct single-cell BAM analysis (with CB barcode tag). Simply run:
+
 ```bash
-python sc_barcode_splitter_run.py -ibt input.bam -b cytoband.txt -p PatientID -o out/ --keep-bams
+telomerehunter2_sc -ibt sample.bam -o results/ -p SampleID -b telomerehunter2/cytoband_files/cytoband.txt --min-reads-per-barcode 10000
 ```
-See `tests/run_sc_atac.py` for examples.
+
+This will perform barcode-aware telomere analysis and output per-cell results in a summary file. The minimum reads per barcode threshold can be set with `--min-reads-per-barcode`.
+
+See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 
 ## Input & Output
 
@@ -108,7 +113,6 @@ See `tests/run_sc_atac.py` for examples.
 - Python >=3.6
 - pysam, numpy, pandas, plotly, PyPDF2
 - For static image export: kaleido (requires chrome/chromium)
-- Sinto (for sc-seq, install with `[sc]` extra)
 - Docker/Apptainer (optional)
 
 Install all dependencies:  
@@ -162,9 +166,9 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 ## Documentation & Resources
 
-- [Wiki](https://github.com/fpopp22/telomerehunter2/wiki)
-- [Example Data](tests/)
-- [Tutorial Videos](https://github.com/fpopp22/telomerehunter2/wiki)
+- [Wiki](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
+- [Example Data](tests/) 
+- [Tutorial Videos](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
 - [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
 
 ## Citation

@@ -71,7 +71,6 @@ deps = [
     "PyPDF2",
     "plotly",
     "kaleido",
-    "sinto"
 ]
 
 [tool.tox.env_run_base]
