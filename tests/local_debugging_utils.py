@@ -317,6 +317,24 @@ def inspect_bam_file(count_reads=True):
                 print("------------------------------")
 
 
+def run_telomerehunter2_sc(bam_file_path, extra_params=None):
+    script_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+        "src",
+        "telomerehunter2",
+        "telomerehunter2_sc.py"
+    )
+    command = ["python", script_path, "-ibt", bam_file_path]
+    if extra_params:
+        command += extra_params
+    print("Running:", " ".join(command))
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True)
+    for line in proc.stdout:
+        print(line, end="")
+    exit_code = proc.wait()
+    assert exit_code == 0, f"Command finished with error. Exit code: {exit_code}"
+
+
 if __name__ == "__main__":
     # Get the directory path of the current script or file
     script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -324,7 +342,7 @@ if __name__ == "__main__":
     data_folder = os.path.join(script_dir, "data")
 
     # Specify testfile
-    file_name = "HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
+    # file_name = "HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.cram"
@@ -332,7 +350,8 @@ if __name__ == "__main__":
     # file_name = "HG00096.combination11.bam"
     # file_name = "test.sorted.bam"
     # file_name = "HG00096.combination11.cram"
-    # file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
+    # file_name = "atac_hgmm_1k_nextgem_possorted_bam_subsampled_10pct.bam"
+    file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
 
     bam_file_path = os.path.join(data_folder, file_name)
     file_format = get_file_type(file_name)
@@ -341,6 +360,9 @@ if __name__ == "__main__":
     control_bam = bam_file_path  # os.path.join(data_folder, "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam")
     banding_file = os.path.join(
         script_dir, "src", "telomerehunter2", "cytoband_files", "hg19_cytoBand.txt"
+    )
+    banding_file_38 = os.path.join(
+        script_dir, "src", "telomerehunter2", "cytoband_files", "hg38_cytoBand.txt"
     )
 
     print("---------------------------")
@@ -393,20 +415,20 @@ if __name__ == "__main__":
     #                         parameters=["-b", banding_file, "-ibc", control_bam])
 
     # tumor and control banding subsampled
-    run_telomerehunter_live(
-        bam_file_path_sub,
-        results_path,
-        "tumor_control_banding_subsampled",
-        parameters=[
-            "-b",
-            banding_file,
-            "-ibc",
-            control_bam,
-            "--subsample",
-            "0.2",
-            "-pno",
-        ],
-    )
+    # run_telomerehunter_live(
+    #     bam_file_path_sub,
+    #     results_path,
+    #     "tumor_control_banding_subsampled",
+    #     parameters=[
+    #         "-b",
+    #         banding_file,
+    #         "-ibc",
+    #         control_bam,
+    #         "--subsample",
+    #         "0.2",
+    #         "-pno",
+    #     ],
+    # )
 
     # tumor banding fast mode
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_fast", parameters=["-b", banding_file, "--fast"])
@@ -416,5 +438,7 @@ if __name__ == "__main__":
 
     # tumor flexible input repeats and hexamers
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_heptamers", parameters=["-r", "TTAGGGG", "TGAGGGG", "TCAGGGG", "TTGGGGG", "-bp", "21", "-rc", "TCAGGGG", "TGAGGGG", "TTGGGGG", "TTCGGGG", "TTTGGGG", "ATAGGGG", "CATGGGG", "CTAGGGG", "GTAGGGG", "TAAGGGG"])
+
+    run_telomerehunter2_sc(bam_file_path, extra_params=["-o", results_path, "-p", "sc_th2", "-b", banding_file, "--min-reads-per-barcode", "10000"])
 
     print("Done testing")
