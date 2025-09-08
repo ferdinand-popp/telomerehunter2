@@ -19,7 +19,6 @@ TelomereHunter2 is a Python-based tool for estimating telomere content and analy
 - Docker and Apptainer/Singularity containers
 - Single cell sequencing support (e.g. scATAC-seq; barcode splitting and per-cell analysis)
 - Robust input handling and exception management
-- Minor changes: skipping the tvrs nrom per 100 bp, improved detection of GXXGGG TVRs, read lengths are estimated from first 1000 reads, added TRPM, 
 
 ## Installation
 
@@ -106,7 +105,7 @@ See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 - `summary.tsv`, `TVR_top_contexts.tsv`, `singletons.tsv`
 - Plots (`plots/` directory, PNG/HTML)
 - Logs (run status/errors)
-- For sc-seq: per-cell results in subfolders and barcode file with barcodes over read threshold
+- For sc-seq: Additionally to the complete bulk run you get per-cell results in sc_summary.tsv and barcode_counts.tsv with reads counts per barcode
 
 ## Dependencies
 
@@ -161,6 +160,8 @@ apptainer run telomerehunter2_latest.sif telomerehunter2 ...
 - **Missing dependencies:** Check `requirements.txt`.
 - **Banding file missing:** Needs reference genome banding file `-b` otherwise analysis will run without reads mapped to subtelomeres.
 - **Plotting:** Try disabling with `--plotNone` or use plotting only mode with `--plotNone`.
+- **Minor changes to TH1:** Skipping the tvrs normalization per 100 bp, improved detection of GXXGGG TVRs, read lengths are estimated from first 1000 reads, added TRPM
+
 
 For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or our FAQ.
 
