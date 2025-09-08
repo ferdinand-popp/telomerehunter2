@@ -54,8 +54,11 @@ def run_sample(
     filter_telomere_reads_flag,
     args,
 ):
+    if getattr(args, "singlecell_mode", False):
+        print(f"[TH2] Running sample '{sample_name}' in single-cell mode.")
+
     if filter_telomere_reads_flag:
-        print("------ " + sample_name + ": started filtering telomere reads ------")
+        print(f"------ {sample_name}: started filtering telomere reads ------")
         filter_telomere_reads.parallel_filter_telomere_reads(
             bam_path=sample_bam,
             out_dir=outdir_sample,
@@ -69,6 +72,7 @@ def run_sample(
             subsample=args.subsample,
             band_file=args.banding_file,
             num_processes=args.cores,
+            singlecell_mode=getattr(args, "singlecell_mode", False),
         )
 
     if args.sort_telomere_reads_flag:
@@ -554,6 +558,13 @@ def parse_command_line_arguments():
         action="store_true",
         help="Repeat threshold is set per 100 bp read length.",
     )
+    threshold_filtering_group.add_argument(
+        "--min-reads-per-barcode",
+        type=int,
+        dest="min_reads_per_barcode",
+        default=10000,
+        help="Minimum reads per barcode for single-cell summary only needed by telomerehunter2_sc.py not the bulk application (default: 10000).",
+    )
 
     repeats_context_group = parser.add_argument_group("Repeats and Context Options")
     repeats_context_group.add_argument(
@@ -564,7 +575,7 @@ def parse_command_line_arguments():
         type=str,
         help="Base sequences to inspect like TTAGGG and its TVRs. First sequence is /"
         "used as base telomeric sequence. Default: ['TTAGGG', 'TGAGGG', 'TCAGGG', /"
-        "'TTCGGG', 'TTGGGG'].",  # Add GTA test run
+        "'TTCGGG', 'TTGGGG'].",
         default=["TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"],
     )
     repeats_context_group.add_argument(
@@ -625,6 +636,13 @@ def parse_command_line_arguments():
         dest="plot_mode",
         help="Run only plotting steps on an existing analysis folder",
     )
+    running_group.add_argument(
+        "-sc",
+        "--singlecell_mode",
+        dest="singlecell_mode",
+        action="store_true",
+        help="Enable barcode counting/output for single-cell BAMs (CB tag). Default: auto-detect if CB tags present.",
+    )
 
     plotting_group = parser.add_argument_group("Plotting Options")
     plotting_group.add_argument(
@@ -647,7 +665,7 @@ def parse_command_line_arguments():
         "--plotFractions",
         dest="plotFractions",
         action="store_true",
-        help="Make a diagram with telomeric reads in each fraction.",
+        help="Make a diagram with telomere reads in each fraction.",
     )
     plotting_group.add_argument(
         "-p3",
@@ -1198,6 +1216,8 @@ def main():
 
     # parse and check input parameters
     args = parse_command_line_arguments()
+    if getattr(args, "singlecell_mode", False):
+        print("Single-cell mode detected. Running full file analysis and barcode-specific insights.")
 
     # If plot_mode is True, directly run plots and exit
     if args.plot_mode:

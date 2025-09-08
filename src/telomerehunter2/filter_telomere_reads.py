@@ -102,7 +102,7 @@ def initialize_chromosome_and_band_data(bamfile, band_file):
     }
 
 
-def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info):
+def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info, barcode_counts=None):
     # Write read counts
     readcount_file_path = os.path.join(out_dir, f"{pid}_readcount.tsv")
     with open(readcount_file_path, "w") as readcount_file:
@@ -130,6 +130,16 @@ def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info):
                 f"{gc_content}\t{gc_content_list.get(gc_content, 0)}\n"
             )
 
+    # Write barcode counts if present
+    if barcode_counts is not None:
+        barcode_file_path = os.path.join(os.path.dirname(out_dir), f"{pid}_barcode_counts.tsv")
+        print(f"Writing barcode table to: {barcode_file_path}")
+        complete_entries = sum(1 for bc in barcode_counts if bc)
+        print(f"Number of complete barcode entries: {complete_entries}")
+        with open(barcode_file_path, "w") as barcode_file:
+            barcode_file.write("barcode\tread_count\n")
+            for bc, count in barcode_counts.items():
+                barcode_file.write(f"{bc}\t{count}\n")
 
 def process_region(args):
     """
@@ -148,6 +158,7 @@ def process_region(args):
         subsample,
         band_info,
         temp_dir,
+        singlecell_mode,  # Add singlecell_mode to args
     ) = args
 
     chrom, coords = region.split(":")
@@ -167,6 +178,8 @@ def process_region(args):
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
         with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
             try:
+                # Barcode counting only if singlecell_mode is True
+                barcode_counts = defaultdict(int) if singlecell_mode else None
                 for read in bamfile.fetch(region=region):
                     # Track the last file position
                     current_pos = bamfile.tell()
@@ -242,6 +255,12 @@ def process_region(args):
                                 read_counts[ref_name][found_band["name"]] = 0
                             read_counts[ref_name][found_band["name"]] += 1
 
+                    # Barcode counting
+                    if singlecell_mode:
+                        bc = read.get_tag("CB") if read.has_tag("CB") else None
+                        if bc:
+                            barcode_counts[bc] += 1
+
                     # Check if it's a telomere read
                     if is_telomere_read(
                         consecutive_flag,
@@ -264,7 +283,8 @@ def process_region(args):
         "read_counts": read_counts,
         "temp_bam": temp_bam,
         "last_position": last_position,
-        "filtered_read_count": filtered_read_count,  # Return the count instead of has_reads
+        "filtered_read_count": filtered_read_count,
+        "barcode_counts": dict(barcode_counts) if barcode_counts is not None else {},
     }
 
 
@@ -282,6 +302,7 @@ def process_unmapped_reads(args):
         subsample,
         temp_dir,
         start_position,
+        singlecell_mode,  # Add singlecell_mode to args
     ) = args
 
     region_name = "unmapped"
@@ -290,6 +311,7 @@ def process_unmapped_reads(args):
     gc_content = {}
     read_counts = {"unmapped": {"unmapped": 0}}
     filtered_read_count = 0  # New counter for filtered reads
+    barcode_counts = defaultdict(int) if singlecell_mode else None
 
     # Subsample
     random_generator = np.random.default_rng() if subsample else None
@@ -341,6 +363,12 @@ def process_unmapped_reads(args):
 
                     read_counts["unmapped"]["unmapped"] += 1
 
+                    # Barcode counting
+                    if singlecell_mode:
+                        bc = read.get_tag("CB") if read.has_tag("CB") else None
+                        if bc:
+                            barcode_counts[bc] += 1
+
                     # Check if it's a telomere read
                     if is_telomere_read(
                         consecutive_flag,
@@ -362,7 +390,8 @@ def process_unmapped_reads(args):
         "gc_content": gc_content,
         "read_counts": read_counts,
         "temp_bam": temp_bam,
-        "filtered_read_count": filtered_read_count,  # Include filtered read count in results
+        "filtered_read_count": filtered_read_count,
+        "barcode_counts": dict(barcode_counts) if barcode_counts is not None else {},
     }
 
 
@@ -380,11 +409,13 @@ def parallel_filter_telomere_reads(
     subsample=False,
     band_file=None,
     num_processes=None,
+    singlecell_mode=None,
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
     """
+
     if subsample is not False and not isinstance(subsample, (float, int)):
         raise ValueError("Subsample must be a number between 0 and 1, or False")
 
@@ -415,6 +446,9 @@ def parallel_filter_telomere_reads(
         results = []
         max_position = 0
         total_filtered_reads = 0  # Initialize total filtered reads counter
+        barcode_counts_merged = defaultdict(int)
+        if singlecell_mode:
+            print("Single-cell mode activated: Barcode counting enabled.")
 
         # First process all mapped regions
         with ProcessPoolExecutor(max_workers=num_processes) as executor:
@@ -435,6 +469,7 @@ def parallel_filter_telomere_reads(
                     subsample,
                     band_info,
                     temp_dir,
+                    singlecell_mode,  # Pass singlecell_mode to process_region
                 )
                 futures.append(executor.submit(process_region, args))
 
@@ -446,12 +481,14 @@ def parallel_filter_telomere_reads(
                         results.append(result)
                         max_position = max(max_position, result.get("last_position", 0))
                         total_filtered_reads += result["filtered_read_count"]
+                        # Merge barcode counts
+                        for bc, count in result.get("barcode_counts", {}).items():
+                            barcode_counts_merged[bc] += count
                         print(
                             f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
                         )
                 except Exception as e:
                     print(f"Error in region processing: {e}")
-
             executor.shutdown(wait=True)
 
         # Process unmapped reads
@@ -467,6 +504,7 @@ def parallel_filter_telomere_reads(
             subsample,
             temp_dir,
             max_position,
+            singlecell_mode,  # Pass singlecell_mode to process_unmapped_reads
         )
 
         try:
@@ -474,6 +512,9 @@ def parallel_filter_telomere_reads(
             if unmapped_result is not None:
                 results.append(unmapped_result)
                 total_filtered_reads += unmapped_result["filtered_read_count"]
+                # Merge barcode counts
+                for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                    barcode_counts_merged[bc] += count
                 print(
                     f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                 )
@@ -530,6 +571,9 @@ def parallel_filter_telomere_reads(
         else:
             print("Warning: No reads passed filtering criteria")
 
+        if singlecell_mode and isinstance(barcode_counts_merged, dict) and not barcode_counts_merged:
+            print("Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
+
         # Write results to files
         write_output(
             out_dir,
@@ -538,6 +582,7 @@ def parallel_filter_telomere_reads(
             dict(gc_content_merged),
             dict(read_counts_merged),
             band_info,
+            barcode_counts=dict(barcode_counts_merged) if singlecell_mode else None,
         )
 
     finally:
