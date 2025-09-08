@@ -46,7 +46,7 @@ documentation = "https://github.com/yourusername/telomerehunter2#readme"
 
 [project.scripts]
 telomerehunter2 = "telomerehunter2.telomerehunter2_main:main"
-sc-barcode-split-run-telomerehunter2 = "telomerehunter2.sc_barcode_splitter_run:main"
+telomerehunter2-sc = "telomerehunter2.telomerehunter2_sc:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
