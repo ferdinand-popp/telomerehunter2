@@ -351,7 +351,8 @@ if __name__ == "__main__":
     # file_name = "test.sorted.bam"
     # file_name = "HG00096.combination11.cram"
     # file_name = "atac_hgmm_1k_nextgem_possorted_bam_subsampled_10pct.bam"
-    file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
+    # file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
+    file_name = "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"
 
     bam_file_path = os.path.join(data_folder, file_name)
     file_format = get_file_type(file_name)
@@ -408,7 +409,8 @@ if __name__ == "__main__":
 
     # only tumor
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file])
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
+    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
+    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel_subsample", parameters=["-b", banding_file, "-pno", "--subsample", "0.2"])
 
     # tumor and control banding
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_control_banding",
@@ -439,6 +441,6 @@ if __name__ == "__main__":
     # tumor flexible input repeats and hexamers
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_heptamers", parameters=["-r", "TTAGGGG", "TGAGGGG", "TCAGGGG", "TTGGGGG", "-bp", "21", "-rc", "TCAGGGG", "TGAGGGG", "TTGGGGG", "TTCGGGG", "TTTGGGG", "ATAGGGG", "CATGGGG", "CTAGGGG", "GTAGGGG", "TAAGGGG"])
 
-    run_telomerehunter2_sc(bam_file_path, extra_params=["-o", results_path, "-p", "sc_th2", "-b", banding_file, "--min-reads-per-barcode", "10000"])
+    # run_telomerehunter2_sc(bam_file_path, extra_params=["-o", results_path, "-p", "sc_th2", "-b", banding_file, "--min-reads-per-barcode", "10000"])
 
     print("Done testing")
