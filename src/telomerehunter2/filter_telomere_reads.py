@@ -155,7 +155,6 @@ def process_region(args):
         repeat_threshold_calc,
         mapq_threshold,
         remove_duplicates,
-        subsample,
         band_info,
         temp_dir,
         singlecell_mode,  # Add singlecell_mode to args
@@ -171,14 +170,10 @@ def process_region(args):
     last_position = 0
     filtered_read_count = 0
 
-    # Subsample check
-    random_generator = np.random.default_rng() if subsample else None
-
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
         with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
             try:
-                # Barcode counting only if singlecell_mode is True
                 barcode_counts = defaultdict(int) if singlecell_mode else None
                 for read in bamfile.fetch(region=region):
                     # Track the last file position
@@ -187,8 +182,6 @@ def process_region(args):
 
                     is_unmapped = read.is_unmapped
                     mapping_quality = read.mapping_quality
-                    if subsample and random_generator.random() >= subsample:
-                        continue
                     if (
                         read.is_secondary
                         or read.is_supplementary
@@ -270,10 +263,7 @@ def process_region(args):
                         repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
-                        filtered_read_count += (
-                            1  # Increment counter when writing to filtered file
-                        )
-
+                        filtered_read_count += 1
             except (ValueError, KeyError) as e:
                 print(f"Error processing region {region}: {e}")
 
@@ -299,7 +289,6 @@ def process_unmapped_reads(args):
         repeat_threshold_calc,
         mapq_threshold,
         remove_duplicates,
-        subsample,
         temp_dir,
         start_position,
         singlecell_mode,  # Add singlecell_mode to args
@@ -310,11 +299,8 @@ def process_unmapped_reads(args):
 
     gc_content = {}
     read_counts = {"unmapped": {"unmapped": 0}}
-    filtered_read_count = 0  # New counter for filtered reads
+    filtered_read_count = 0
     barcode_counts = defaultdict(int) if singlecell_mode else None
-
-    # Subsample
-    random_generator = np.random.default_rng() if subsample else None
 
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
@@ -332,9 +318,6 @@ def process_unmapped_reads(args):
 
                 for read in fetch_reads:
                     if not read.is_unmapped:
-                        continue
-
-                    if subsample and random_generator.random() >= subsample:
                         continue
                     if (
                         read.is_secondary
@@ -378,10 +361,7 @@ def process_unmapped_reads(args):
                         repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
-                        filtered_read_count += (
-                            1  # Increment counter when writing to filtered file
-                        )
-
+                        filtered_read_count += 1
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
 
@@ -416,14 +396,38 @@ def parallel_filter_telomere_reads(
     Temporary files are stored in the output directory and cleaned up after processing.
     """
 
-    if subsample is not False and not isinstance(subsample, (float, int)):
-        raise ValueError("Subsample must be a number between 0 and 1, or False")
+    if subsample is not False and not isinstance(subsample, float):
+        raise ValueError("Subsample must be a float between 0 and 1, or False")
 
     # Create a temporary directory within the output directory
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
     os.makedirs(temp_dir, exist_ok=True)
 
     try:
+        if subsample:
+            print(f"Subsampling with samtools -s {subsample}")
+            # Use samtools view -s to subsample for template/ read pairs before filtering
+            seed = 42
+            seed_fraction = f"{seed}.{str(subsample).split('.')[1]}"
+            ext = ".bam" if bam_path.endswith(".bam") else ".cram"
+            subsample_temp_file = os.path.join(temp_dir, f"subsampled_{pid}{ext}")
+            pysam.view(
+                "-b" if ext == ".bam" else "-C",
+                "-s",
+                str(seed_fraction),
+                bam_path,
+                "-o",
+                subsample_temp_file,
+                catch_stdout=False,
+            )
+            # Ensure file is created before indexing
+            if not os.path.exists(subsample_temp_file):
+                print(f"ERROR: Subsampled file not found: {subsample_temp_file}")
+                raise FileNotFoundError(f"Subsampled file not found: {subsample_temp_file}")
+
+            pysam.index(subsample_temp_file)
+            bam_path = subsample_temp_file
+
         if num_processes is None:
             num_processes = mp.cpu_count()
         print(f"Using {num_processes} cores")
@@ -453,8 +457,6 @@ def parallel_filter_telomere_reads(
         # First process all mapped regions
         with ProcessPoolExecutor(max_workers=num_processes) as executor:
             futures = []
-
-            # Submit all regions for processing
             print(f"Processing {len(regions)} regions")
             for region in regions:
                 args = (
@@ -466,25 +468,24 @@ def parallel_filter_telomere_reads(
                     repeat_threshold_calc,
                     mapq_threshold,
                     remove_duplicates,
-                    subsample,
                     band_info,
                     temp_dir,
-                    singlecell_mode,  # Pass singlecell_mode to process_region
+                    singlecell_mode,
                 )
                 futures.append(executor.submit(process_region, args))
-
-            # Collect results and track the maximum file position
             for future in as_completed(futures):
                 try:
                     result = future.result()
+
+            # Collect results and track the maximum file position
                     if result is not None:
                         results.append(result)
                         max_position = max(max_position, result.get("last_position", 0))
                         total_filtered_reads += result["filtered_read_count"]
-                        # Merge barcode counts
                         for bc, count in result.get("barcode_counts", {}).items():
                             barcode_counts_merged[bc] += count
                         print(
+                        # Merge barcode counts
                             f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
                         )
                 except Exception as e:
@@ -501,10 +502,9 @@ def parallel_filter_telomere_reads(
             repeat_threshold_calc,
             mapq_threshold,
             remove_duplicates,
-            subsample,
             temp_dir,
             max_position,
-            singlecell_mode,  # Pass singlecell_mode to process_unmapped_reads
+            singlecell_mode,
         )
 
         try:
@@ -512,10 +512,10 @@ def parallel_filter_telomere_reads(
             if unmapped_result is not None:
                 results.append(unmapped_result)
                 total_filtered_reads += unmapped_result["filtered_read_count"]
-                # Merge barcode counts
                 for bc, count in unmapped_result.get("barcode_counts", {}).items():
                     barcode_counts_merged[bc] += count
                 print(
+                # Merge barcode counts
                     f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                 )
         except Exception as e:
@@ -552,6 +552,15 @@ def parallel_filter_telomere_reads(
                 shutil.copy(temp_bams[0], output_bam)
             else:
                 pysam.merge("-f", output_bam, *temp_bams)
+
+                # Prepare for deduplication if needed
+                coord_sorted_bam = os.path.join(out_dir, f"{pid}_filtered_coord_sorted.bam")
+                pysam.sort("-o", coord_sorted_bam, output_bam)
+                pysam.index(coord_sorted_bam)
+
+                # Deduplicate
+                output_bam = os.path.join(out_dir, f"{pid}_filtered_dedup.bam")
+                pysam.markdup(coord_sorted_bam, output_bam)
 
             # Sort by name and index the filtered file
             pysam.index(output_bam)
