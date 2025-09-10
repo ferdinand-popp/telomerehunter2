@@ -24,7 +24,6 @@ import shutil
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-import numpy as np
 import pysam
 
 from telomerehunter2.utils import (get_band_info, get_reverse_complement,
@@ -40,11 +39,11 @@ def compile_patterns(repeats):
 
 
 def is_telomere_read(
-    consecutive_flag,
-    patterns_regex_forward,
-    patterns_regex_reverse,
-    sequence,
-    repeat_threshold_calc,
+        consecutive_flag,
+        patterns_regex_forward,
+        patterns_regex_reverse,
+        sequence,
+        repeat_threshold_calc,
 ):
     # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
@@ -57,8 +56,8 @@ def is_telomere_read(
     else:
         # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
 
 
@@ -141,6 +140,7 @@ def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info, 
             for bc, count in barcode_counts.items():
                 barcode_file.write(f"{bc}\t{count}\n")
 
+
 def process_region(args):
     """
     Process a specific region of the BAM file for telomere reads.
@@ -183,9 +183,9 @@ def process_region(args):
                     is_unmapped = read.is_unmapped
                     mapping_quality = read.mapping_quality
                     if (
-                        read.is_secondary
-                        or read.is_supplementary
-                        or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                     ):
                         continue
 
@@ -194,7 +194,7 @@ def process_region(args):
                     try:
                         read_length = len(sequence)
                     except (
-                        TypeError
+                            TypeError
                     ):  # skip if there is no sequence for read in BAM file
                         continue
 
@@ -256,11 +256,11 @@ def process_region(args):
 
                     # Check if it's a telomere read
                     if is_telomere_read(
-                        consecutive_flag,
-                        patterns_regex_forward,
-                        patterns_regex_reverse,
-                        sequence,
-                        repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
                         filtered_read_count += 1
@@ -320,9 +320,9 @@ def process_unmapped_reads(args):
                     if not read.is_unmapped:
                         continue
                     if (
-                        read.is_secondary
-                        or read.is_supplementary
-                        or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                     ):
                         continue
 
@@ -354,11 +354,11 @@ def process_unmapped_reads(args):
 
                     # Check if it's a telomere read
                     if is_telomere_read(
-                        consecutive_flag,
-                        patterns_regex_forward,
-                        patterns_regex_reverse,
-                        sequence,
-                        repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
                         filtered_read_count += 1
@@ -377,19 +377,19 @@ def process_unmapped_reads(args):
 
 @measure_time
 def parallel_filter_telomere_reads(
-    bam_path,
-    out_dir,
-    pid,
-    sample,
-    repeat_threshold_calc,
-    mapq_threshold,
-    repeats,
-    consecutive_flag,
-    remove_duplicates,
-    subsample=False,
-    band_file=None,
-    num_processes=None,
-    singlecell_mode=None,
+        bam_path,
+        out_dir,
+        pid,
+        sample,
+        repeat_threshold_calc,
+        mapq_threshold,
+        repeats,
+        consecutive_flag,
+        remove_duplicates,
+        subsample=False,
+        band_file=None,
+        num_processes=None,
+        singlecell_mode=None,
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
@@ -477,7 +477,7 @@ def parallel_filter_telomere_reads(
                 try:
                     result = future.result()
 
-            # Collect results and track the maximum file position
+                    # Collect results and track the maximum file position
                     if result is not None:
                         results.append(result)
                         max_position = max(max_position, result.get("last_position", 0))
@@ -485,7 +485,6 @@ def parallel_filter_telomere_reads(
                         for bc, count in result.get("barcode_counts", {}).items():
                             barcode_counts_merged[bc] += count
                         print(
-                        # Merge barcode counts
                             f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
                         )
                 except Exception as e:
@@ -515,7 +514,6 @@ def parallel_filter_telomere_reads(
                 for bc, count in unmapped_result.get("barcode_counts", {}).items():
                     barcode_counts_merged[bc] += count
                 print(
-                # Merge barcode counts
                     f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                 )
         except Exception as e:
@@ -544,23 +542,34 @@ def parallel_filter_telomere_reads(
             result["temp_bam"]
             for result in results
             if os.path.exists(result["temp_bam"])
-            and os.path.getsize(result["temp_bam"]) > 0
+               and os.path.getsize(result["temp_bam"]) > 0
         ]
 
         if temp_bams:
             if len(temp_bams) == 1:
                 shutil.copy(temp_bams[0], output_bam)
             else:
+                # Merge BAMs
                 pysam.merge("-f", output_bam, *temp_bams)
 
-                # Prepare for deduplication if needed
-                coord_sorted_bam = os.path.join(out_dir, f"{pid}_filtered_coord_sorted.bam")
-                pysam.sort("-o", coord_sorted_bam, output_bam)
-                pysam.index(coord_sorted_bam)
-
-                # Deduplicate
-                output_bam = os.path.join(out_dir, f"{pid}_filtered_dedup.bam")
-                pysam.markdup(coord_sorted_bam, output_bam)
+                # TODO: write checks for duplicate entries
+                # # Sort by query name for fixmate
+                # name_sorted_bam = os.path.join(temp_dir, f"{pid}_filtered_name_sorted_for_fixmate.bam")
+                # pysam.sort("-n", "-o", name_sorted_bam, output_bam)
+                #
+                # # Run fixmate
+                # fixmate_bam = os.path.join(out_dir, f"{pid}_filtered_fixmate.bam")
+                # pysam.fixmate("-m", name_sorted_bam, fixmate_bam)
+                #
+                # # Sort fixmate BAM by coordinate for markdup
+                # coord_sorted_bam = os.path.join(temp_dir, f"{pid}_filtered_coord_sorted_for_markdup.bam")
+                # pysam.sort("-o", coord_sorted_bam, fixmate_bam)
+                # pysam.index(coord_sorted_bam)  # Index only after coordinate sorting
+                #
+                # try:
+                #     pysam.markdup(coord_sorted_bam, output_bam)
+                # except pysam.SamtoolsError as e:
+                #     print(f"Warning: markdup failed: {e}. Skipping deduplication.")
 
             # Sort by name and index the filtered file
             pysam.index(output_bam)
@@ -581,7 +590,8 @@ def parallel_filter_telomere_reads(
             print("Warning: No reads passed filtering criteria")
 
         if singlecell_mode and isinstance(barcode_counts_merged, dict) and not barcode_counts_merged:
-            print("Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
+            print(
+                "Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
 
         # Write results to files
         write_output(
