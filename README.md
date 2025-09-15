@@ -167,10 +167,18 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 ## Documentation & Resources
 
-- [Wiki](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
-- [Example Data](tests/) 
-- [Tutorial Videos](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
-- [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
+### 📚 Comprehensive Documentation
+- **[📖 Wiki Documentation](wiki/)** - Complete user and developer guides:
+  - [🚀 Installation and Usage](wiki/Installation-and-Usage.md) - Setup and quickstart guides
+  - [📊 Input and Output](wiki/Input-and-Output.md) - File formats and output explanations  
+  - [⚙️ Advanced Options](wiki/Advanced-Options-and-Customization.md) - Customization and advanced usage
+  - [👥 Contributing](wiki/Contributing-and-Development.md) - Developer guidelines
+  - [📖 References](wiki/References-and-Citations.md) - Citations and acknowledgements
+
+### 🔗 Additional Resources
+- [Example Data](tests/) - Test files and validation data
+- [Docker Hub](https://hub.docker.com/r/fpopp22/telomerehunter2) - Container images
+- [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0) - Scientific publication
 
 ## Citation
 
