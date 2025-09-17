@@ -411,6 +411,7 @@ def parallel_filter_telomere_reads(
             seed_fraction = f"{seed}.{str(subsample).split('.')[1]}"
             ext = ".bam" if bam_path.endswith(".bam") else ".cram"
             subsample_temp_file = os.path.join(temp_dir, f"subsampled_{pid}{ext}")
+            num_threads = num_processes if num_processes is not None else mp.cpu_count()
             pysam.view(
                 "-b" if ext == ".bam" else "-C",
                 "-s",
@@ -418,6 +419,10 @@ def parallel_filter_telomere_reads(
                 bam_path,
                 "-o",
                 subsample_temp_file,
+                "-@",
+                str(num_threads),
+                "-l",
+                "3",
                 catch_stdout=False,
             )
             # Ensure file is created before indexing
