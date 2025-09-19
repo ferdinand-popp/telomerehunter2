@@ -358,7 +358,7 @@ if __name__ == "__main__":
     file_format = get_file_type(file_name)
 
     # optional files
-    control_bam = bam_file_path  # os.path.join(data_folder, "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam")
+    control_bam = os.path.join(data_folder, "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam")
     banding_file = os.path.join(
         script_dir, "src", "telomerehunter2", "cytoband_files", "hg19_cytoBand.txt"
     )
@@ -409,7 +409,7 @@ if __name__ == "__main__":
 
     # only tumor
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file])
-    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno", "--fast_mode"])
+    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno", "--fast_mode"])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel_subsample", parameters=["-b", banding_file, "-pno", "--subsample", "0.2"])
 
@@ -417,21 +417,20 @@ if __name__ == "__main__":
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_control_banding",
     #                         parameters=["-b", banding_file, "-ibc", control_bam])
 
-    # tumor and control banding subsampled
-    # run_telomerehunter_live(
-    #     bam_file_path_sub,
-    #     results_path,
-    #     "tumor_control_banding_subsampled",
-    #     parameters=[
-    #         "-b",
-    #         banding_file,
-    #         "-ibc",
-    #         control_bam,
-    #         "--subsample",
-    #         "0.2",
-    #         "-pno",
-    #     ],
-    # )
+    # tumor and control banding
+    run_telomerehunter_live(
+        bam_file_path_sub,
+        results_path,
+        "tumor_control_banding_fast",
+        parameters=[
+            "-b",
+            banding_file,
+            "-ibc",
+            control_bam,
+            "--fast_mode",
+            "-pno",
+        ],
+    )
 
     # tumor banding fast mode
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_fast", parameters=["-b", banding_file, "--fast"])
