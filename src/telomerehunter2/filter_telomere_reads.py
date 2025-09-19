@@ -386,7 +386,6 @@ def parallel_filter_telomere_reads(
         repeats,
         consecutive_flag,
         remove_duplicates,
-        subsample=False,
         band_file=None,
         num_processes=None,
         singlecell_mode=None,
@@ -396,43 +395,11 @@ def parallel_filter_telomere_reads(
     Temporary files are stored in the output directory and cleaned up after processing.
     """
 
-    if subsample is not False and not isinstance(subsample, float):
-        raise ValueError("Subsample must be a float between 0 and 1, or False")
-
     # Create a temporary directory within the output directory
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
     os.makedirs(temp_dir, exist_ok=True)
 
     try:
-        if subsample:
-            print(f"Subsampling with samtools -s {subsample}")
-            # Use samtools view -s to subsample for template/ read pairs before filtering
-            seed = 42
-            seed_fraction = f"{seed}.{str(subsample).split('.')[1]}"
-            ext = ".bam" if bam_path.endswith(".bam") else ".cram"
-            subsample_temp_file = os.path.join(temp_dir, f"subsampled_{pid}{ext}")
-            num_threads = num_processes if num_processes is not None else mp.cpu_count()
-            pysam.view(
-                "-b" if ext == ".bam" else "-C",
-                "-s",
-                str(seed_fraction),
-                bam_path,
-                "-o",
-                subsample_temp_file,
-                "-@",
-                str(num_threads),
-                "-l",
-                "3",
-                catch_stdout=False,
-            )
-            # Ensure file is created before indexing
-            if not os.path.exists(subsample_temp_file):
-                print(f"ERROR: Subsampled file not found: {subsample_temp_file}")
-                raise FileNotFoundError(f"Subsampled file not found: {subsample_temp_file}")
-
-            pysam.index(subsample_temp_file)
-            bam_path = subsample_temp_file
-
         if num_processes is None:
             num_processes = mp.cpu_count()
         print(f"Using {num_processes} cores")
@@ -557,24 +524,6 @@ def parallel_filter_telomere_reads(
                 # Merge BAMs
                 pysam.merge("-f", output_bam, *temp_bams)
 
-                # TODO: write checks for duplicate entries
-                # # Sort by query name for fixmate
-                # name_sorted_bam = os.path.join(temp_dir, f"{pid}_filtered_name_sorted_for_fixmate.bam")
-                # pysam.sort("-n", "-o", name_sorted_bam, output_bam)
-                #
-                # # Run fixmate
-                # fixmate_bam = os.path.join(out_dir, f"{pid}_filtered_fixmate.bam")
-                # pysam.fixmate("-m", name_sorted_bam, fixmate_bam)
-                #
-                # # Sort fixmate BAM by coordinate for markdup
-                # coord_sorted_bam = os.path.join(temp_dir, f"{pid}_filtered_coord_sorted_for_markdup.bam")
-                # pysam.sort("-o", coord_sorted_bam, fixmate_bam)
-                # pysam.index(coord_sorted_bam)  # Index only after coordinate sorting
-                #
-                # try:
-                #     pysam.markdup(coord_sorted_bam, output_bam)
-                # except pysam.SamtoolsError as e:
-                #     print(f"Warning: markdup failed: {e}. Skipping deduplication.")
 
             # Sort by name and index the filtered file
             pysam.index(output_bam)

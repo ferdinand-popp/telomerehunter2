@@ -360,6 +360,13 @@ def parse_command_line_arguments():
         dest="singlecell_mode",
         action="store_true",
         help="Enable barcode counting/output for single-cell BAMs (CB tag). Default: auto-detect if CB tags present.",
+    running_group.add_argument(
+        "-fm",
+        "--fast_mode",
+        dest="fast_mode",
+        action="store_true",
+        help="Run in fast mode: extract and filter unmapped reads only.",
+    )
     )
 
     plotting_group = parser.add_argument_group("Plotting Options")
@@ -767,6 +774,48 @@ def run_plots(args, outdir, pid, repeat_thresholds_plot):
         print("Combining results")
         merge_pdfs.merge_telomere_hunter_results(pid, outdir, args.banding_file)
 
+def run_fast_mode(args):
+    # Only run for tumor_bam (main sample)
+    bam_path = args.tumor_bam
+    out_dir = os.path.join(args.parent_outdir, args.pid)
+    os.makedirs(out_dir, exist_ok=True)
+    temp_unmapped_bam = os.path.join(out_dir, f"{args.pid}_unmapped.bam")
+
+    # Extract unmapped reads using pysam.view
+    print(f"Extracting unmapped reads from {bam_path} to {temp_unmapped_bam}")
+    pysam.view(
+        '-b', '-f', '4', bam_path, '-o', temp_unmapped_bam, catch_stdout=False
+    )
+    pysam.index(temp_unmapped_bam)
+
+    # Count unmapped reads
+    with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
+        unmapped_count = unmapped_bam.count(until_eof=True)
+    print(f"Number of unmapped reads: {unmapped_count}")
+
+    # Count total reads in original BAM
+    with pysam.AlignmentFile(bam_path, "rb" if bam_path.endswith('.bam') else "rc") as bam_file:
+        total_count = bam_file.count(until_eof=True)
+    print(f"Total number of reads in input: {total_count}")
+
+    # Run filtering only on unmapped reads BAM
+    filter_telomere_reads.parallel_filter_telomere_reads(
+        bam_path=temp_unmapped_bam,
+        out_dir=out_dir,
+        pid=args.pid,
+        sample="unmapped",
+        repeat_threshold_calc=args.repeat_threshold_set,
+        mapq_threshold=args.mapq_threshold,
+        repeats=args.repeats,
+        consecutive_flag=args.consecutive,
+        remove_duplicates=args.remove_duplicates,
+        band_file=args.banding_file,
+        num_processes=args.cores,
+        singlecell_mode=getattr(args, "singlecell_mode", False),
+    )
+    print("Fast mode filtering complete.")
+
+
 
 def main():
     # print welcome
@@ -776,6 +825,12 @@ def main():
     args = parse_command_line_arguments()
     if getattr(args, "singlecell_mode", False):
         print("Single-cell mode detected. Running full file analysis and barcode-specific insights.")
+
+    # Fast mode branch
+    if getattr(args, "fast_mode", False):
+        run_fast_mode(args)
+        return
+
 
     # If plot_mode is True, directly run plots and exit
     if args.plot_mode:
