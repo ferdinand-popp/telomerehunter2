@@ -19,6 +19,7 @@ TelomereHunter2 is a Python-based tool for estimating telomere content and analy
 - Docker and Apptainer/Singularity containers
 - Single cell sequencing support (e.g. scATAC-seq; barcode splitting and per-cell analysis)
 - Robust input handling and exception management
+- **Fast mode for quick overview of unmapped reads**
 
 ## Installation
 
@@ -81,6 +82,8 @@ See [Bulk Analysis](#bulk-analysis) and [Single cell sequencing Analysis](#singl
   `telomerehunter2 -ibt tumor.bam -ibc control.bam -o out/ -p PairID -b cytoband.txt`
 - **Custom repeats/species:**  
   `telomerehunter2 ... --repeats TTTAGGG TTAAGGG --repeatsContext TTAAGGG`
+- **Fast mode (quick overview of unmapped reads generating summary with overview):**  
+  `telomerehunter2 -ibt sample.bam -o out/ -p SampleID --fast_mode`
 
 ### Single cell sequencing Analysis
 
