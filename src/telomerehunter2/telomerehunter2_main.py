@@ -73,7 +73,6 @@ def run_sample(
             repeats=args.repeats,
             consecutive_flag=args.consecutive,
             remove_duplicates=args.remove_duplicates,
-            subsample=args.subsample,
             band_file=args.banding_file,
             num_processes=args.cores,
             singlecell_mode=getattr(args, "singlecell_mode", False),
@@ -327,13 +326,6 @@ def parse_command_line_arguments():
 
     running_group = parser.add_argument_group("Running Options")
     running_group.add_argument(
-        "--subsample",
-        dest="subsample",
-        default=False,
-        type=float,
-        help="Specify a subsample fraction (float between 0 and 1). If not provided, defaults to False.",
-    )
-    running_group.add_argument(
         "-c",
         "--cores",
         dest="cores",
@@ -360,13 +352,13 @@ def parse_command_line_arguments():
         dest="singlecell_mode",
         action="store_true",
         help="Enable barcode counting/output for single-cell BAMs (CB tag). Default: auto-detect if CB tags present.",
+    )
     running_group.add_argument(
         "-fm",
         "--fast_mode",
         dest="fast_mode",
         action="store_true",
         help="Run in fast mode: extract and filter unmapped reads only.",
-    )
     )
 
     plotting_group = parser.add_argument_group("Plotting Options")

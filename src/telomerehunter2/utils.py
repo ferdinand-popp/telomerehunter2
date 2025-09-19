@@ -346,12 +346,6 @@ def validate_args(args):
             "argument -gc1/--lowerGC must be less than argument -gc2/--upperGC."
         )
 
-    if args.subsample:
-        if args.subsample < 0 or args.subsample > 1:
-            raise argparse.ArgumentTypeError(
-                f"Subsample value must be between 0 and 1. Got {args.subsample} instead."
-            )
-
 
 def validate_plotting_options(args):
     if args.plotNone and (
