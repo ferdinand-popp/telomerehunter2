@@ -344,7 +344,7 @@ if __name__ == "__main__":
     # Specify testfile
     # file_name = "HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
-    # file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
+    file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.cram"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522_subsampled.bam"
     # file_name = "HG00096.combination11.bam"
@@ -352,7 +352,7 @@ if __name__ == "__main__":
     # file_name = "HG00096.combination11.cram"
     # file_name = "atac_hgmm_1k_nextgem_possorted_bam_subsampled_10pct.bam"
     # file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
-    file_name = "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"
+    # file_name = "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"
 
     bam_file_path = os.path.join(data_folder, file_name)
     file_format = get_file_type(file_name)
@@ -409,7 +409,8 @@ if __name__ == "__main__":
 
     # only tumor
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file])
-    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
+    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno", "--fast_mode"])
+    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel_subsample", parameters=["-b", banding_file, "-pno", "--subsample", "0.2"])
 
     # tumor and control banding

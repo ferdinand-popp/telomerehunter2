@@ -389,6 +389,7 @@ def parallel_filter_telomere_reads(
         band_file=None,
         num_processes=None,
         singlecell_mode=None,
+        fast_mode=False,  # NEW: flag to indicate fast mode
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
@@ -418,7 +419,6 @@ def parallel_filter_telomere_reads(
         # Compile regex patterns
         patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats)
 
-        regions = [f"{ref}:1-{length}" for ref, length in zip(references, lengths)]
         results = []
         max_position = 0
         total_filtered_reads = 0  # Initialize total filtered reads counter
@@ -426,70 +426,98 @@ def parallel_filter_telomere_reads(
         if singlecell_mode:
             print("Single-cell mode activated: Barcode counting enabled.")
 
-        # First process all mapped regions
-        with ProcessPoolExecutor(max_workers=num_processes) as executor:
-            futures = []
-            print(f"Processing {len(regions)} regions")
-            for region in regions:
-                args = (
-                    bam_path,
-                    region,
-                    patterns_regex_forward,
-                    patterns_regex_reverse,
-                    consecutive_flag,
-                    repeat_threshold_calc,
-                    mapq_threshold,
-                    remove_duplicates,
-                    band_info,
-                    temp_dir,
-                    singlecell_mode,
-                )
-                futures.append(executor.submit(process_region, args))
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
+        # FAST MODE: Only process unmapped reads, skip region-based processing
+        if fast_mode:
+            print("Fast mode: Skipping region-based processing, only processing unmapped reads.")
+            unmapped_args = (
+                bam_path,
+                patterns_regex_forward,
+                patterns_regex_reverse,
+                consecutive_flag,
+                repeat_threshold_calc,
+                mapq_threshold,
+                remove_duplicates,
+                temp_dir,
+                0,  # start_position
+                singlecell_mode,
+            )
+            try:
+                unmapped_result = process_unmapped_reads(unmapped_args)
+                if unmapped_result is not None:
+                    results.append(unmapped_result)
+                    total_filtered_reads += unmapped_result["filtered_read_count"]
+                    for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        barcode_counts_merged[bc] += count
+                    print(
+                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                    )
+            except Exception as e:
+                print(f"Error processing unmapped reads: {e}")
+        else:
+            # First process all mapped regions
+            regions = [f"{ref}:1-{length}" for ref, length in zip(references, lengths)]
+            with ProcessPoolExecutor(max_workers=num_processes) as executor:
+                futures = []
+                print(f"Processing {len(regions)} regions")
+                for region in regions:
+                    args = (
+                        bam_path,
+                        region,
+                        patterns_regex_forward,
+                        patterns_regex_reverse,
+                        consecutive_flag,
+                        repeat_threshold_calc,
+                        mapq_threshold,
+                        remove_duplicates,
+                        band_info,
+                        temp_dir,
+                        singlecell_mode,
+                    )
+                    futures.append(executor.submit(process_region, args))
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        # Collect results and track the maximum file position
+                        if result is not None:
+                            results.append(result)
+                            max_position = max(max_position, result.get("last_position", 0))
+                            total_filtered_reads += result["filtered_read_count"]
+                            for bc, count in result.get("barcode_counts", {}).items():
+                                barcode_counts_merged[bc] += count
+                            print(
+                                f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
+                            )
+                    except Exception as e:
+                        print(f"Error in region processing: {e}")
+                executor.shutdown(wait=True)
 
-                    # Collect results and track the maximum file position
-                    if result is not None:
-                        results.append(result)
-                        max_position = max(max_position, result.get("last_position", 0))
-                        total_filtered_reads += result["filtered_read_count"]
-                        for bc, count in result.get("barcode_counts", {}).items():
-                            barcode_counts_merged[bc] += count
-                        print(
-                            f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
-                        )
-                except Exception as e:
-                    print(f"Error in region processing: {e}")
-            executor.shutdown(wait=True)
+            # Process unmapped reads
+            print(f"Processing unmapped reads from position: {max_position}")
+            unmapped_args = (
+                bam_path,
+                patterns_regex_forward,
+                patterns_regex_reverse,
+                consecutive_flag,
+                repeat_threshold_calc,
+                mapq_threshold,
+                remove_duplicates,
+                temp_dir,
+                max_position,
+                singlecell_mode,
+            )
 
-        # Process unmapped reads
-        print(f"Processing unmapped reads from position: {max_position}")
-        unmapped_args = (
-            bam_path,
-            patterns_regex_forward,
-            patterns_regex_reverse,
-            consecutive_flag,
-            repeat_threshold_calc,
-            mapq_threshold,
-            remove_duplicates,
-            temp_dir,
-            max_position,
-            singlecell_mode,
-        )
-
-        try:
-            unmapped_result = process_unmapped_reads(unmapped_args)
-            if unmapped_result is not None:
-                results.append(unmapped_result)
-                total_filtered_reads += unmapped_result["filtered_read_count"]
-                for bc, count in unmapped_result.get("barcode_counts", {}).items():
-                    barcode_counts_merged[bc] += count
-                print(
-                    f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
-                )
-        except Exception as e:
-            print(f"Error processing unmapped reads: {e}")
+            try:
+                unmapped_result = process_unmapped_reads(unmapped_args)
+                if unmapped_result is not None:
+                    results.append(unmapped_result)
+                    total_filtered_reads += unmapped_result["filtered_read_count"]
+                    for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        barcode_counts_merged[bc] += count
+                    print(
+                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                    )
+            except Exception as e:
+                print(f"Error processing unmapped reads: {e}")
 
         # Print total filtered reads
         print(f"\nTotal number of reads that passed filtering: {total_filtered_reads}")

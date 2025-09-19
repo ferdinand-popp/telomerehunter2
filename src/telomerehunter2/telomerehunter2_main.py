@@ -790,13 +790,24 @@ def run_fast_mode(args):
         total_count = bam_file.count(until_eof=True)
     print(f"Total number of reads in input: {total_count}")
 
-    # Run filtering only on unmapped reads BAM
+    # Calculate repeat threshold using main script logic (from full BAM)
+    (
+        _read_lengths_control,
+        read_lengths_tumor,
+        _repeat_thresholds_control,
+        _repeat_thresholds_plot,
+        _repeat_thresholds_str_control,
+        repeat_thresholds_str_tumor,
+        repeat_thresholds_tumor,
+    ) = get_read_lengths_and_repeat_thresholds(args, None, bam_path)
+
+    # Run filtering only on unmapped reads BAM, using calculated threshold
     filter_telomere_reads.parallel_filter_telomere_reads(
         bam_path=temp_unmapped_bam,
         out_dir=out_dir,
         pid=args.pid,
         sample="unmapped",
-        repeat_threshold_calc=args.repeat_threshold_set,
+        repeat_threshold_calc=repeat_thresholds_tumor,
         mapq_threshold=args.mapq_threshold,
         repeats=args.repeats,
         consecutive_flag=args.consecutive,
@@ -804,6 +815,7 @@ def run_fast_mode(args):
         band_file=args.banding_file,
         num_processes=args.cores,
         singlecell_mode=getattr(args, "singlecell_mode", False),
+        fast_mode=True,  # Ensure only unmapped reads are processed
     )
     print("Fast mode filtering complete.")
 
