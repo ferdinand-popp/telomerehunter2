@@ -47,6 +47,7 @@ from telomerehunter2.utils import (
     print_copyright_message,
 )
 
+
 def run_sample(
         sample_name,
         sample_bam,
@@ -585,7 +586,7 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
             )
 
         # Calculate control thresholds if needed
-        if args.control_flag:
+        if args.control_flag and control_bam:
             # Get read lengths and calculate thresholds for control
             read_lengths_str_control, control_read_length_counts = (
                 get_repeat_threshold.get_read_lengths(control_bam)
@@ -766,59 +767,148 @@ def run_plots(args, outdir, pid, repeat_thresholds_plot):
         print("Combining results")
         merge_pdfs.merge_telomere_hunter_results(pid, outdir, args.banding_file)
 
+
 def run_fast_mode(args):
-    # Only run for tumor_bam (main sample)
-    bam_path = args.tumor_bam
+    # Output directory
     out_dir = os.path.join(args.parent_outdir, args.pid)
     os.makedirs(out_dir, exist_ok=True)
-    temp_unmapped_bam = os.path.join(out_dir, f"{args.pid}_unmapped.bam")
 
-    # Extract unmapped reads using pysam.view
-    print(f"Extracting unmapped reads from {bam_path} to {temp_unmapped_bam}")
-    pysam.view(
-        '-b', '-f', '4', bam_path, '-o', temp_unmapped_bam, catch_stdout=False
-    )
-    pysam.index(temp_unmapped_bam)
+    # Banding file handling: allow None
+    band_file = args.banding_file if hasattr(args, 'banding_file') and args.banding_file else None
 
-    # Count unmapped reads
-    with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
-        unmapped_count = unmapped_bam.count(until_eof=True)
-    print(f"Number of unmapped reads: {unmapped_count}")
+    # Helper to run filtering for a sample
+    def run_sample_fast(bam_path, sample_name):
+        # Create subdirectory for sample (mimic main pipeline)
+        sample_out_dir = os.path.join(out_dir, f"{sample_name}_TelomerCnt_{args.pid}")
+        os.makedirs(sample_out_dir, exist_ok=True)
+        temp_unmapped_bam = os.path.join(sample_out_dir, f"{args.pid}_{sample_name}_unmapped.bam")
+        print(f"Extracting unmapped reads from {bam_path} to {temp_unmapped_bam}")
+        pysam.view(
+            '-b', '-f', '4', bam_path, '-o', temp_unmapped_bam, catch_stdout=False
+        )
+        pysam.index(temp_unmapped_bam)
 
-    # Count total reads in original BAM
-    with pysam.AlignmentFile(bam_path, "rb" if bam_path.endswith('.bam') else "rc") as bam_file:
-        total_count = bam_file.count(until_eof=True)
-    print(f"Total number of reads in input: {total_count}")
+        with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
+            unmapped_count = unmapped_bam.count(until_eof=True)
+        print(f"Number of unmapped reads: {unmapped_count}")
 
-    # Calculate repeat threshold using main script logic (from full BAM)
-    (
-        _read_lengths_control,
-        read_lengths_tumor,
-        _repeat_thresholds_control,
-        _repeat_thresholds_plot,
-        _repeat_thresholds_str_control,
-        repeat_thresholds_str_tumor,
-        repeat_thresholds_tumor,
-    ) = get_read_lengths_and_repeat_thresholds(args, None, bam_path)
+        with pysam.AlignmentFile(bam_path, "rb" if bam_path.endswith('.bam') else "rc") as bam_file:
+            total_count = bam_file.count(until_eof=True)
+        print(f"Total number of reads in input: {total_count}")
 
-    # Run filtering only on unmapped reads BAM, using calculated threshold
-    filter_telomere_reads.parallel_filter_telomere_reads(
-        bam_path=temp_unmapped_bam,
-        out_dir=out_dir,
-        pid=args.pid,
-        sample="unmapped",
-        repeat_threshold_calc=repeat_thresholds_tumor,
-        mapq_threshold=args.mapq_threshold,
-        repeats=args.repeats,
-        consecutive_flag=args.consecutive,
-        remove_duplicates=args.remove_duplicates,
-        band_file=args.banding_file,
-        num_processes=args.cores,
-        singlecell_mode=getattr(args, "singlecell_mode", False),
-        fast_mode=True,  # Ensure only unmapped reads are processed
-    )
-    print("Fast mode filtering complete.")
+        (
+            _read_lengths_control,
+            read_lengths_tumor,
+            _repeat_thresholds_control,
+            _repeat_thresholds_plot,
+            _repeat_thresholds_str_control,
+            repeat_thresholds_str_tumor,
+            repeat_thresholds_tumor,
+        ) = get_read_lengths_and_repeat_thresholds(args, None, bam_path)
 
+        filter_telomere_reads.parallel_filter_telomere_reads(
+            bam_path=temp_unmapped_bam,
+            out_dir=sample_out_dir,
+            pid=args.pid,
+            sample=sample_name,
+            repeat_threshold_calc=repeat_thresholds_tumor,
+            mapq_threshold=args.mapq_threshold,
+            repeats=args.repeats,
+            consecutive_flag=args.consecutive,
+            remove_duplicates=args.remove_duplicates,
+            band_file=band_file,
+            num_processes=args.cores,
+            singlecell_mode=getattr(args, "singlecell_mode", False),
+            fast_mode=True,
+        )
+        print(f"Fast mode filtering complete for {sample_name}.")
+
+        summary_path = os.path.join(sample_out_dir, f"{args.pid}_{sample_name}_summary.tsv")
+        print(f"Preparing to write summary for {sample_name} in {summary_path}")
+        try:
+            # Minimal summary writing for fast mode (now robust and main-mode compatible)
+            readcount_path = os.path.join(sample_out_dir, f"{args.pid}_readcount.tsv")
+            filtered_bam_path = os.path.join(sample_out_dir, f"{args.pid}_filtered.bam")
+            # Get repeat threshold and read lengths
+            trpm_threshold = repeat_thresholds_tumor if isinstance(repeat_thresholds_tumor, int) else str(repeat_thresholds_tumor)
+            read_lengths = str(read_lengths_tumor) if read_lengths_tumor is not None else "NA"
+            # Get intratelomeric and unmapped reads from readcount.tsv
+            intratelomeric_reads = 0
+            unmapped_reads = 0
+            if os.path.exists(readcount_path):
+                try:
+                    readcount_df = pd.read_csv(readcount_path, sep='\t')
+                    intratelomeric_reads = readcount_df[readcount_df['chr'] != 'unmapped']['reads'].sum()
+                    unmapped_reads = readcount_df[readcount_df['chr'] == 'unmapped']['reads'].sum()
+                except Exception as e:
+                    print(f"Error reading readcount.tsv: {e}")
+            # Get tel_read_count from filtered.bam
+            tel_read_count = 0
+            if os.path.exists(filtered_bam_path):
+                try:
+                    with pysam.AlignmentFile(filtered_bam_path, "rb") as bam:
+                        tel_read_count = bam.count(until_eof=True)
+                except Exception as e:
+                    print(f"Error reading filtered.bam for tel_read_count: {e}")
+            # Calculate TRPM
+            TRPM = (tel_read_count / total_count * 1e6) if total_count > 0 else 0.0
+            # Write summary file with main-mode compatible header
+            header = "\t".join([
+                "PID", "sample", "total_reads", "read_length", "repeat_threshold_set", "repeat_threshold_used",
+                "intratelomeric_reads", "tel_read_count", "TRPM", "unmapped_reads"
+            ])
+            results_line = f"{args.pid}\t{sample_name}\t{total_count}\t{read_lengths}\t{trpm_threshold}\t{trpm_threshold}\t{intratelomeric_reads}\t{tel_read_count}\t{TRPM:.6f}\t{unmapped_reads}\n"
+            with open(summary_path, 'w') as f:
+                f.write(header + "\n")
+                f.write(results_line)
+            print(f"Summary file written for {sample_name}: {summary_path}")
+        except Exception as e:
+            print(f"Error writing summary for {sample_name}: {e}")
+    tumor_summary_path = None
+    control_summary_path = None
+
+    # ACTUALLY RUN FAST MODE FOR TUMOR AND CONTROL
+    tumor_summary_path = os.path.join(out_dir, f"tumor_TelomerCnt_{args.pid}", f"{args.pid}_tumor_summary.tsv")
+    if args.tumor_bam:
+        run_sample_fast(args.tumor_bam, "tumor")
+        control_summary_path = os.path.join(out_dir, f"control_TelomerCnt_{args.pid}", f"{args.pid}_control_summary.tsv")
+
+    # Create combined summary file in parent output dir
+    combined_summary_path = os.path.join(out_dir, f"{args.pid}_summary.tsv")
+    rows = []
+    header = ["PID", "sample", "total_reads", "read_length", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "TRPM", "unmapped_reads"]
+    tumor_trpm = None
+    control_trpm = None
+    # Helper to map DataFrame row to header order
+    def map_row_to_header(df_row, header):
+        return [str(df_row.get(col, "NA")) for col in header]
+    # Read tumor summary
+    if tumor_summary_path and os.path.exists(tumor_summary_path):
+        df_tumor = pd.read_csv(tumor_summary_path, sep='\t')
+        row_tumor = map_row_to_header(df_tumor.iloc[0], header)
+        rows.append(row_tumor)
+        tumor_trpm = df_tumor.iloc[0].get("TRPM", None)
+    # Read control summary
+    if control_summary_path and os.path.exists(control_summary_path):
+        df_control = pd.read_csv(control_summary_path, sep='\t')
+        row_control = map_row_to_header(df_control.iloc[0], header)
+        rows.append(row_control)
+        control_trpm = df_control.iloc[0].get("TRPM", None)
+    # Add log2 row if both available
+    if tumor_trpm is not None and control_trpm is not None and float(control_trpm) > 0 and float(tumor_trpm) > 0:
+        log2_trpm = np.log2(float(tumor_trpm) / float(control_trpm))
+        log2_row = [args.pid, "log2(tumor/control)"] + ["NA"] * (len(header) - 3) + [f"{log2_trpm:.6f}", "NA"]
+        # Place log2 value in TRPM column
+        log2_row[header.index("TRPM")] = f"{log2_trpm:.6f}"
+        rows.append(log2_row)
+    # Write combined summary
+    with open(combined_summary_path, 'w') as f:
+        f.write("\t".join(header) + "\n")
+        for row in rows:
+            f.write("\t".join([str(x) for x in row]) + "\n")
+    print(f"Combined summary file written: {combined_summary_path}")
+    if args.control_bam:
+        run_sample_fast(args.control_bam, "control")
 
 
 def main():
@@ -834,7 +924,6 @@ def main():
     if getattr(args, "fast_mode", False):
         run_fast_mode(args)
         return
-
 
     # If plot_mode is True, directly run plots and exit
     if args.plot_mode:
