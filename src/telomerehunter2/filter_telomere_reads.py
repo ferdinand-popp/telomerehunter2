@@ -24,7 +24,6 @@ import shutil
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-import numpy as np
 import pysam
 
 from telomerehunter2.utils import (get_band_info, get_reverse_complement,
@@ -40,11 +39,11 @@ def compile_patterns(repeats):
 
 
 def is_telomere_read(
-    consecutive_flag,
-    patterns_regex_forward,
-    patterns_regex_reverse,
-    sequence,
-    repeat_threshold_calc,
+        consecutive_flag,
+        patterns_regex_forward,
+        patterns_regex_reverse,
+        sequence,
+        repeat_threshold_calc,
 ):
     # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
@@ -57,8 +56,8 @@ def is_telomere_read(
     else:
         # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
 
 
@@ -141,6 +140,7 @@ def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info, 
             for bc, count in barcode_counts.items():
                 barcode_file.write(f"{bc}\t{count}\n")
 
+
 def process_region(args):
     """
     Process a specific region of the BAM file for telomere reads.
@@ -155,7 +155,6 @@ def process_region(args):
         repeat_threshold_calc,
         mapq_threshold,
         remove_duplicates,
-        subsample,
         band_info,
         temp_dir,
         singlecell_mode,  # Add singlecell_mode to args
@@ -171,14 +170,10 @@ def process_region(args):
     last_position = 0
     filtered_read_count = 0
 
-    # Subsample check
-    random_generator = np.random.default_rng() if subsample else None
-
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
         with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
             try:
-                # Barcode counting only if singlecell_mode is True
                 barcode_counts = defaultdict(int) if singlecell_mode else None
                 for read in bamfile.fetch(region=region):
                     # Track the last file position
@@ -187,12 +182,10 @@ def process_region(args):
 
                     is_unmapped = read.is_unmapped
                     mapping_quality = read.mapping_quality
-                    if subsample and random_generator.random() >= subsample:
-                        continue
                     if (
-                        read.is_secondary
-                        or read.is_supplementary
-                        or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                     ):
                         continue
 
@@ -201,7 +194,7 @@ def process_region(args):
                     try:
                         read_length = len(sequence)
                     except (
-                        TypeError
+                            TypeError
                     ):  # skip if there is no sequence for read in BAM file
                         continue
 
@@ -263,17 +256,14 @@ def process_region(args):
 
                     # Check if it's a telomere read
                     if is_telomere_read(
-                        consecutive_flag,
-                        patterns_regex_forward,
-                        patterns_regex_reverse,
-                        sequence,
-                        repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
-                        filtered_read_count += (
-                            1  # Increment counter when writing to filtered file
-                        )
-
+                        filtered_read_count += 1
             except (ValueError, KeyError) as e:
                 print(f"Error processing region {region}: {e}")
 
@@ -299,22 +289,23 @@ def process_unmapped_reads(args):
         repeat_threshold_calc,
         mapq_threshold,
         remove_duplicates,
-        subsample,
         temp_dir,
         start_position,
         singlecell_mode,  # Add singlecell_mode to args
     ) = args
+
+    print(f"Filtering parameters: consecutive_flag={consecutive_flag}, repeat_threshold_calc={repeat_threshold_calc}")
+    print(f"Patterns (forward): {patterns_regex_forward.pattern}")
+    print(f"Patterns (reverse): {patterns_regex_reverse.pattern}")
 
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
 
     gc_content = {}
     read_counts = {"unmapped": {"unmapped": 0}}
-    filtered_read_count = 0  # New counter for filtered reads
+    filtered_read_count = 0
     barcode_counts = defaultdict(int) if singlecell_mode else None
-
-    # Subsample
-    random_generator = np.random.default_rng() if subsample else None
+    total_reads_processed = 0
 
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
@@ -331,15 +322,13 @@ def process_unmapped_reads(args):
                     fetch_reads = bamfile.fetch(contig="*")
 
                 for read in fetch_reads:
+                    total_reads_processed += 1
                     if not read.is_unmapped:
                         continue
-
-                    if subsample and random_generator.random() >= subsample:
-                        continue
                     if (
-                        read.is_secondary
-                        or read.is_supplementary
-                        or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                     ):
                         continue
 
@@ -371,19 +360,19 @@ def process_unmapped_reads(args):
 
                     # Check if it's a telomere read
                     if is_telomere_read(
-                        consecutive_flag,
-                        patterns_regex_forward,
-                        patterns_regex_reverse,
-                        sequence,
-                        repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                     ):
                         filtered_file.write(read)
-                        filtered_read_count += (
-                            1  # Increment counter when writing to filtered file
-                        )
-
+                        filtered_read_count += 1
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
+
+    print(f"Total reads processed: {total_reads_processed}")
+    print(f"Total telomeric reads found: {filtered_read_count}")
 
     return {
         "region": "unmapped",
@@ -397,27 +386,24 @@ def process_unmapped_reads(args):
 
 @measure_time
 def parallel_filter_telomere_reads(
-    bam_path,
-    out_dir,
-    pid,
-    sample,
-    repeat_threshold_calc,
-    mapq_threshold,
-    repeats,
-    consecutive_flag,
-    remove_duplicates,
-    subsample=False,
-    band_file=None,
-    num_processes=None,
-    singlecell_mode=None,
+        bam_path,
+        out_dir,
+        pid,
+        sample,
+        repeat_threshold_calc,
+        mapq_threshold,
+        repeats,
+        consecutive_flag,
+        remove_duplicates,
+        band_file=None,
+        num_processes=None,
+        singlecell_mode=None,
+        fast_mode=False,  # NEW: flag to indicate fast mode
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
     """
-
-    if subsample is not False and not isinstance(subsample, (float, int)):
-        raise ValueError("Subsample must be a number between 0 and 1, or False")
 
     # Create a temporary directory within the output directory
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
@@ -442,7 +428,6 @@ def parallel_filter_telomere_reads(
         # Compile regex patterns
         patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats)
 
-        regions = [f"{ref}:1-{length}" for ref, length in zip(references, lengths)]
         results = []
         max_position = 0
         total_filtered_reads = 0  # Initialize total filtered reads counter
@@ -450,76 +435,98 @@ def parallel_filter_telomere_reads(
         if singlecell_mode:
             print("Single-cell mode activated: Barcode counting enabled.")
 
-        # First process all mapped regions
-        with ProcessPoolExecutor(max_workers=num_processes) as executor:
-            futures = []
+        # FAST MODE: Only process unmapped reads, skip region-based processing
+        if fast_mode:
+            print("Fast mode: Skipping region-based processing, only processing unmapped reads.")
+            unmapped_args = (
+                bam_path,
+                patterns_regex_forward,
+                patterns_regex_reverse,
+                consecutive_flag,
+                repeat_threshold_calc,
+                mapq_threshold,
+                remove_duplicates,
+                temp_dir,
+                0,  # start_position
+                singlecell_mode,
+            )
+            try:
+                unmapped_result = process_unmapped_reads(unmapped_args)
+                if unmapped_result is not None:
+                    results.append(unmapped_result)
+                    total_filtered_reads += unmapped_result["filtered_read_count"]
+                    for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        barcode_counts_merged[bc] += count
+                    print(
+                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                    )
+            except Exception as e:
+                print(f"Error processing unmapped reads: {e}")
+        else:
+            # First process all mapped regions
+            regions = [f"{ref}:1-{length}" for ref, length in zip(references, lengths)]
+            with ProcessPoolExecutor(max_workers=num_processes) as executor:
+                futures = []
+                print(f"Processing {len(regions)} regions")
+                for region in regions:
+                    args = (
+                        bam_path,
+                        region,
+                        patterns_regex_forward,
+                        patterns_regex_reverse,
+                        consecutive_flag,
+                        repeat_threshold_calc,
+                        mapq_threshold,
+                        remove_duplicates,
+                        band_info,
+                        temp_dir,
+                        singlecell_mode,
+                    )
+                    futures.append(executor.submit(process_region, args))
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        # Collect results and track the maximum file position
+                        if result is not None:
+                            results.append(result)
+                            max_position = max(max_position, result.get("last_position", 0))
+                            total_filtered_reads += result["filtered_read_count"]
+                            for bc, count in result.get("barcode_counts", {}).items():
+                                barcode_counts_merged[bc] += count
+                            print(
+                                f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
+                            )
+                    except Exception as e:
+                        print(f"Error in region processing: {e}")
+                executor.shutdown(wait=True)
 
-            # Submit all regions for processing
-            print(f"Processing {len(regions)} regions")
-            for region in regions:
-                args = (
-                    bam_path,
-                    region,
-                    patterns_regex_forward,
-                    patterns_regex_reverse,
-                    consecutive_flag,
-                    repeat_threshold_calc,
-                    mapq_threshold,
-                    remove_duplicates,
-                    subsample,
-                    band_info,
-                    temp_dir,
-                    singlecell_mode,  # Pass singlecell_mode to process_region
-                )
-                futures.append(executor.submit(process_region, args))
+            # Process unmapped reads
+            print(f"Processing unmapped reads from position: {max_position}")
+            unmapped_args = (
+                bam_path,
+                patterns_regex_forward,
+                patterns_regex_reverse,
+                consecutive_flag,
+                repeat_threshold_calc,
+                mapq_threshold,
+                remove_duplicates,
+                temp_dir,
+                max_position,
+                singlecell_mode,
+            )
 
-            # Collect results and track the maximum file position
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result is not None:
-                        results.append(result)
-                        max_position = max(max_position, result.get("last_position", 0))
-                        total_filtered_reads += result["filtered_read_count"]
-                        # Merge barcode counts
-                        for bc, count in result.get("barcode_counts", {}).items():
-                            barcode_counts_merged[bc] += count
-                        print(
-                            f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
-                        )
-                except Exception as e:
-                    print(f"Error in region processing: {e}")
-            executor.shutdown(wait=True)
-
-        # Process unmapped reads
-        print(f"Processing unmapped reads from position: {max_position}")
-        unmapped_args = (
-            bam_path,
-            patterns_regex_forward,
-            patterns_regex_reverse,
-            consecutive_flag,
-            repeat_threshold_calc,
-            mapq_threshold,
-            remove_duplicates,
-            subsample,
-            temp_dir,
-            max_position,
-            singlecell_mode,  # Pass singlecell_mode to process_unmapped_reads
-        )
-
-        try:
-            unmapped_result = process_unmapped_reads(unmapped_args)
-            if unmapped_result is not None:
-                results.append(unmapped_result)
-                total_filtered_reads += unmapped_result["filtered_read_count"]
-                # Merge barcode counts
-                for bc, count in unmapped_result.get("barcode_counts", {}).items():
-                    barcode_counts_merged[bc] += count
-                print(
-                    f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
-                )
-        except Exception as e:
-            print(f"Error processing unmapped reads: {e}")
+            try:
+                unmapped_result = process_unmapped_reads(unmapped_args)
+                if unmapped_result is not None:
+                    results.append(unmapped_result)
+                    total_filtered_reads += unmapped_result["filtered_read_count"]
+                    for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        barcode_counts_merged[bc] += count
+                    print(
+                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                    )
+            except Exception as e:
+                print(f"Error processing unmapped reads: {e}")
 
         # Print total filtered reads
         print(f"\nTotal number of reads that passed filtering: {total_filtered_reads}")
@@ -544,14 +551,16 @@ def parallel_filter_telomere_reads(
             result["temp_bam"]
             for result in results
             if os.path.exists(result["temp_bam"])
-            and os.path.getsize(result["temp_bam"]) > 0
+               and os.path.getsize(result["temp_bam"]) > 0
         ]
 
         if temp_bams:
             if len(temp_bams) == 1:
                 shutil.copy(temp_bams[0], output_bam)
             else:
+                # Merge BAMs
                 pysam.merge("-f", output_bam, *temp_bams)
+
 
             # Sort by name and index the filtered file
             pysam.index(output_bam)
@@ -572,7 +581,8 @@ def parallel_filter_telomere_reads(
             print("Warning: No reads passed filtering criteria")
 
         if singlecell_mode and isinstance(barcode_counts_merged, dict) and not barcode_counts_merged:
-            print("Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
+            print(
+                "Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
 
         # Write results to files
         write_output(
