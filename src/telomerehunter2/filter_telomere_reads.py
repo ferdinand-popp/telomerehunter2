@@ -294,6 +294,10 @@ def process_unmapped_reads(args):
         singlecell_mode,  # Add singlecell_mode to args
     ) = args
 
+    print(f"Filtering parameters: consecutive_flag={consecutive_flag}, repeat_threshold_calc={repeat_threshold_calc}")
+    print(f"Patterns (forward): {patterns_regex_forward.pattern}")
+    print(f"Patterns (reverse): {patterns_regex_reverse.pattern}")
+
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
 
@@ -301,6 +305,7 @@ def process_unmapped_reads(args):
     read_counts = {"unmapped": {"unmapped": 0}}
     filtered_read_count = 0
     barcode_counts = defaultdict(int) if singlecell_mode else None
+    total_reads_processed = 0
 
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
     with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
@@ -317,6 +322,7 @@ def process_unmapped_reads(args):
                     fetch_reads = bamfile.fetch(contig="*")
 
                 for read in fetch_reads:
+                    total_reads_processed += 1
                     if not read.is_unmapped:
                         continue
                     if (
@@ -364,6 +370,9 @@ def process_unmapped_reads(args):
                         filtered_read_count += 1
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
+
+    print(f"Total reads processed: {total_reads_processed}")
+    print(f"Total telomeric reads found: {filtered_read_count}")
 
     return {
         "region": "unmapped",
