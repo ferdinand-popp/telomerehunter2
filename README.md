@@ -10,6 +10,13 @@
 
 TelomereHunter2 is a Python-based tool for estimating telomere content and analyzing telomeric variant repeats (TVRs) from genome sequencing data. It supports BAM/CRAM files, flexible telomere repeat and reference genome inputs, and provides outputs for bulk and single-cell genome sequencing data.
 
+---
+
+## Release Notes
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the latest changes and version history.
+
+---
+
 ## Features
 
 - Fast, container-friendly Python 3 implementation
@@ -36,12 +43,6 @@ cd telomerehunter2
 python -m venv venv
 source venv/bin/activate
 pip install -e . --no-cache-dir
-
-# With poetry:
-git clone https://github.com/ferdinand-popp/telomerehunter2.git
-cd telomerehunter2
-poetry env use python3
-poetry install
 
 # With uv:
 git clone https://github.com/ferdinand-popp/telomerehunter2.git
