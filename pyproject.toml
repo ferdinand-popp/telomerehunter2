@@ -24,7 +24,6 @@ dependencies = [
     "plotly",
     "kaleido"
 ]
-optional-dependencies = { sc = ["sinto"] }
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -41,8 +40,8 @@ classifiers = [
 
 [project.urls]
 homepage = "https://www.dkfz.de/en/applied-bioinformatics/telomerehunter/telomerehunter.html"
-repository = "https://github.com/yourusername/telomerehunter2"
-documentation = "https://github.com/yourusername/telomerehunter2#readme"
+repository = "https://github.com/ferdinand-popp/telomerehunter2"
+documentation = "https://github.com/ferdinand-popp/telomerehunter2#readme"
 
 [project.scripts]
 telomerehunter2 = "telomerehunter2.telomerehunter2_main:main"
