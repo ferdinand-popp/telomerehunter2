@@ -179,6 +179,9 @@ def subsample_bam(input_path, format, fraction=0.2):
     """
     if format == "BAM":
         subsampled_filename = re.sub(r"\.bam$", "_subsampled.bam", input_path)
+        if os.path.exists(subsampled_filename):
+            print("Subsampled file already present, skipping subsampling.")
+            return subsampled_filename
 
         # Use pysam.view with '-s' option to subsample by fraction
         pysam.view(
@@ -192,6 +195,9 @@ def subsample_bam(input_path, format, fraction=0.2):
         )
     elif format == "CRAM":
         subsampled_filename = re.sub(r"\.cram$", "_subsampled.cram", input_path)
+        if os.path.exists(subsampled_filename):
+            print("Subsampled file already present, skipping subsampling.")
+            return subsampled_filename
 
         # Use pysam.view with '-s' option to subsample by fraction
         pysam.view(
@@ -344,7 +350,7 @@ if __name__ == "__main__":
     # Specify testfile
     # file_name = "HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
-    file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
+    # file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.cram"
     # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522_subsampled.bam"
     # file_name = "HG00096.combination11.bam"
@@ -353,6 +359,7 @@ if __name__ == "__main__":
     # file_name = "atac_hgmm_1k_nextgem_possorted_bam_subsampled_10pct.bam"
     # file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
     # file_name = "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"
+    file_name = "HG00152.alt_bwamem_GRCh38DH.20150718.GBR.low_coverage.cram"
 
     bam_file_path = os.path.join(data_folder, file_name)
     file_format = get_file_type(file_name)
@@ -389,7 +396,7 @@ if __name__ == "__main__":
     preprocessing = "None"
     print(f"Preprocessing: {preprocessing}")
     switch = {
-        "Subsample": lambda: subsample_bam(bam_file_path, file_format, fraction=0.3),
+        "Subsample": lambda: subsample_bam(bam_file_path, file_format, fraction=0.1),
         "Unmapped": lambda: get_unmapped_bam(bam_file_path, file_format),
         "None": lambda: bam_file_path,
     }
@@ -411,6 +418,7 @@ if __name__ == "__main__":
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno", "--fast_mode"])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
+    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file_38, "-pno", "-c", "8"])
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel_subsample", parameters=["-b", banding_file, "-pno", "--subsample", "0.2"])
 
     # tumor and control banding
@@ -418,19 +426,19 @@ if __name__ == "__main__":
     #                         parameters=["-b", banding_file, "-ibc", control_bam])
 
     # tumor and control banding
-    run_telomerehunter_live(
-        bam_file_path_sub,
-        results_path,
-        "tumor_control_banding_fast",
-        parameters=[
-            "-b",
-            banding_file,
-            "-ibc",
-            control_bam,
-            "--fast_mode",
-            "-pno",
-        ],
-    )
+    # run_telomerehunter_live(
+    #     bam_file_path_sub,
+    #     results_path,
+    #     "tumor_control_banding_fast",
+    #     parameters=[
+    #         "-b",
+    #         banding_file,
+    #         "-ibc",
+    #         control_bam,
+    #         "--fast_mode",
+    #         "-pno",
+    #     ],
+    # )
 
     # tumor banding fast mode
     # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_fast", parameters=["-b", banding_file, "--fast"])

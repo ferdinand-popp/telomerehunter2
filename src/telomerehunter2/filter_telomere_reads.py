@@ -29,7 +29,6 @@ import pysam
 from telomerehunter2.utils import (get_band_info, get_reverse_complement,
                                    measure_time)
 
-
 def compile_patterns(repeats):
     patterns_regex_forward = "|".join(repeats)
     patterns_regex_reverse = "|".join(
@@ -148,7 +147,7 @@ def process_region(args):
     """
     (
         bam_path,
-        region,
+        region_info,
         patterns_regex_forward,
         patterns_regex_reverse,
         consecutive_flag,
@@ -157,13 +156,12 @@ def process_region(args):
         remove_duplicates,
         band_info,
         temp_dir,
-        singlecell_mode,  # Add singlecell_mode to args
+        singlecell_mode,
     ) = args
 
-    chrom, coords = region.split(":")
-    start, end = map(int, coords.split("-"))
-    region_name = f"{chrom}_{start}_{end}"
-    temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
+    chrom, start, end = region_info  # unpack tuple
+    region_str = f"{chrom}__{start}__{end}"
+    temp_bam = os.path.join(temp_dir, f"region_{region_str}_filtered.bam")
 
     gc_content = {}
     read_counts = {"unmapped": {"unmapped": 0}}
@@ -175,7 +173,8 @@ def process_region(args):
         with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
             try:
                 barcode_counts = defaultdict(int) if singlecell_mode else None
-                for read in bamfile.fetch(region=region):
+                # Use contig, start, end arguments for fetch to avoid ambiguity
+                for read in bamfile.fetch(contig=chrom, start=start-1, end=end):
                     # Track the last file position
                     current_pos = bamfile.tell()
                     last_position = max(last_position, current_pos)
@@ -265,10 +264,10 @@ def process_region(args):
                         filtered_file.write(read)
                         filtered_read_count += 1
             except (ValueError, KeyError) as e:
-                print(f"Error processing region {region}: {e}")
+                print(f"Error processing region {region_str}: {e}")
 
     return {
-        "region": region,
+        "region": region_info,
         "gc_content": gc_content,
         "read_counts": read_counts,
         "temp_bam": temp_bam,
@@ -398,7 +397,7 @@ def parallel_filter_telomere_reads(
         band_file=None,
         num_processes=None,
         singlecell_mode=None,
-        fast_mode=False,  # NEW: flag to indicate fast mode
+        fast_mode=False,
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
@@ -464,14 +463,14 @@ def parallel_filter_telomere_reads(
                 print(f"Error processing unmapped reads: {e}")
         else:
             # First process all mapped regions
-            regions = [f"{ref}:1-{length}" for ref, length in zip(references, lengths)]
+            regions = [(ref, 1, length) for ref, length in zip(references, lengths)]
             with ProcessPoolExecutor(max_workers=num_processes) as executor:
                 futures = []
                 print(f"Processing {len(regions)} regions")
-                for region in regions:
+                for region_info in regions:
                     args = (
                         bam_path,
-                        region,
+                        region_info,
                         patterns_regex_forward,
                         patterns_regex_reverse,
                         consecutive_flag,
