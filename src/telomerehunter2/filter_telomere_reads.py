@@ -17,6 +17,23 @@
 # You should have received a copy of the GNU General Public License
 # along with TelomereHunter2. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Filter telomere reads from BAM/CRAM files using parallel processing.
+
+WINDOWS COMPATIBILITY NOTE:
+    When calling parallel_filter_telomere_reads() or any function that uses 
+    ProcessPoolExecutor from a script, always protect the call with:
+    
+        if __name__ == "__main__":
+            parallel_filter_telomere_reads(...)
+    
+    This is required on Windows where multiprocessing uses 'spawn' instead of 'fork'.
+    Without this guard, each subprocess will re-import the module and attempt to 
+    start more subprocesses, causing BrokenProcessPool errors.
+    
+    The main() function at the bottom of this file demonstrates the correct pattern.
+"""
+
 import multiprocessing as mp
 import os
 import re
@@ -419,6 +436,10 @@ def parallel_filter_telomere_reads(
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
+    
+    NOTE for Windows users: Due to Windows' multiprocessing 'spawn' method, this function must be 
+    called from within an `if __name__ == "__main__":` guard in your script to avoid 
+    BrokenProcessPool errors. See the main() function below for an example.
     """
 
     # Create a temporary directory within the output directory
@@ -639,3 +660,57 @@ def parallel_filter_telomere_reads(
             print(f"Error removing temporary directory {temp_dir}: {e}")
 
     return None
+
+
+def main():
+    """
+    Example main entry point for testing filter_telomere_reads functionality.
+    
+    This demonstrates the correct pattern for calling parallel_filter_telomere_reads
+    with multiprocessing support, especially important for Windows compatibility.
+    
+    For production use, call this module's functions from telomerehunter2_main.py
+    which already has proper main guard protection.
+    """
+    import sys
+    
+    if len(sys.argv) < 4:
+        print("Usage: python -m telomerehunter2.filter_telomere_reads <bam_path> <out_dir> <pid>")
+        print("\nExample for testing:")
+        print("  python -m telomerehunter2.filter_telomere_reads sample.bam ./output sample_id")
+        print("\nNote: This is a minimal example. For full functionality, use telomerehunter2 CLI.")
+        sys.exit(1)
+    
+    bam_path = sys.argv[1]
+    out_dir = sys.argv[2]
+    pid = sys.argv[3]
+    
+    # Create output directory
+    os.makedirs(out_dir, exist_ok=True)
+    
+    # Default parameters for testing
+    parallel_filter_telomere_reads(
+        bam_path=bam_path,
+        out_dir=out_dir,
+        pid=pid,
+        sample="test_sample",
+        repeat_threshold_calc=4,
+        mapq_threshold=0,
+        repeats=["TTAGGG", "TCAGGG", "TGAGGG"],
+        consecutive_flag=False,
+        remove_duplicates=False,
+        band_file=None,
+        num_processes=None,
+        singlecell_mode=False,
+        fast_mode=False,
+    )
+    print(f"Filtering complete. Results written to {out_dir}")
+
+
+if __name__ == "__main__":
+    # This guard is required for Windows multiprocessing compatibility.
+    # On Windows, the multiprocessing module uses 'spawn' instead of 'fork',
+    # which means the entire module is re-imported in each subprocess.
+    # Without this guard, each subprocess would try to start more subprocesses,
+    # leading to BrokenProcessPool errors.
+    main()

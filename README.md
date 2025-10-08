@@ -165,6 +165,7 @@ apptainer run telomerehunter2_latest.sif telomerehunter2 ...
 - **Banding file missing:** Needs reference genome banding file `-b` otherwise analysis will run without reads mapped to subtelomeres.
 - **Plotting:** Try disabling with `--plotNone` or use plotting only mode with `--plotNone`.
 - **Minor changes to TH1:** Skipping the tvrs normalization per 100 bp, improved detection of GXXGGG TVRs, read lengths are estimated from first 1000 reads, added TRPM
+- **Windows Multiprocessing (BrokenProcessPool errors):** When writing custom scripts that import and call TelomereHunter2 functions using multiprocessing (such as `parallel_filter_telomere_reads`), always protect the function calls with `if __name__ == "__main__":`. This is required on Windows where Python's multiprocessing uses the 'spawn' method instead of 'fork'. Without this guard, each subprocess will re-import your script and attempt to start more subprocesses, causing `BrokenProcessPool` errors. The built-in CLI commands (`telomerehunter2`, `telomerehunter2-sc`) already include this protection and work correctly on Windows.
 
 
 For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or our FAQ.
