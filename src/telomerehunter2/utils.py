@@ -18,6 +18,7 @@
 # along with TelomereHunter2. If not, see <http://www.gnu.org/licenses/>.
 
 import cProfile
+import functools
 import io
 import os
 import pstats
@@ -36,6 +37,7 @@ from telomerehunter2 import get_repeat_threshold
 def measure_time(func):
     """Wrapper function to simply print the execution time for a function"""
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)

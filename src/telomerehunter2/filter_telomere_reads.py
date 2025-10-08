@@ -639,3 +639,11 @@ def parallel_filter_telomere_reads(
             print(f"Error removing temporary directory {temp_dir}: {e}")
 
     return None
+
+
+def main():
+    pass
+
+
+if __name__ == "__main__":
+    main()
