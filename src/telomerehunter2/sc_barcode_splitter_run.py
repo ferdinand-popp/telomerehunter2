@@ -2,6 +2,10 @@
 """
 sc-ATAC Barcode Splitter and Telomerehunter2 Runner
 Splits sc-ATAC BAM files by cell barcodes (Sinto) and processes them with telomerehunter2
+
+WINDOWS COMPATIBILITY:
+    This module includes proper Windows multiprocessing compatibility via the
+    `if __name__ == "__main__":` guard at the bottom of the file.
 """
 
 import argparse

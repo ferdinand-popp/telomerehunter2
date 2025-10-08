@@ -17,6 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with TelomereHunter2. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Main entry point for TelomereHunter2 bulk analysis.
+
+This module includes proper Windows multiprocessing compatibility via the
+`if __name__ == "__main__":` guard at the bottom of the file.
+"""
+
 
 import argparse
 import multiprocessing

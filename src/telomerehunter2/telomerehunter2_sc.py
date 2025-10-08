@@ -9,6 +9,10 @@ This script performs telomere analysis on single-cell sequencing data:
 4. Outputs a comprehensive summary table with normalized metrics
 
 The analysis follows the same approach as bulk TH2 but applied to each barcode independently.
+
+WINDOWS COMPATIBILITY:
+    This module includes proper Windows multiprocessing compatibility via the
+    `if __name__ == "__main__":` guard at the bottom of the file.
 """
 import sys
 import os
