@@ -20,6 +20,7 @@
 import multiprocessing as mp
 import os
 import re
+import sys
 import shutil
 import traceback
 from collections import defaultdict
@@ -148,143 +149,154 @@ def process_region(args):
     Process a specific region of the BAM file for telomere reads.
     Returns the last file position processed along with other results.
     """
-    (
-        bam_path,
-        region_info,
-        patterns_regex_forward,
-        patterns_regex_reverse,
-        consecutive_flag,
-        repeat_threshold_calc,
-        mapq_threshold,
-        remove_duplicates,
-        band_info,
-        temp_dir,
-        singlecell_mode,
-    ) = args
+    try:
+        (
+            bam_path,
+            region_info,
+            patterns_regex_forward,
+            patterns_regex_reverse,
+            consecutive_flag,
+            repeat_threshold_calc,
+            mapq_threshold,
+            remove_duplicates,
+            band_info,
+            temp_dir,
+            singlecell_mode,
+        ) = args
 
-    chrom, start, end = region_info  # unpack tuple
-    region_str = f"{chrom}__{start}__{end}"
-    temp_bam = os.path.join(temp_dir, f"region_{region_str}_filtered.bam")
+        chrom, start, end = region_info  # unpack tuple
+        region_str = f"{chrom}__{start}__{end}"
+        temp_bam = os.path.join(temp_dir, f"region_{region_str}_filtered.bam")
 
-    gc_content = {}
-    read_counts = {"unmapped": {"unmapped": 0}}
-    last_position = 0
-    filtered_read_count = 0
+        gc_content = {}
+        read_counts = {"unmapped": {"unmapped": 0}}
+        last_position = 0
+        filtered_read_count = 0
 
-    open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-    with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
-        with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
-            try:
-                barcode_counts = defaultdict(int) if singlecell_mode else None
-                for read in bamfile.fetch(contig=chrom, start=start - 1, end=end):
-                    try:
-                        # Track the last file position
-                        current_pos = bamfile.tell()
-                        last_position = max(last_position, current_pos)
-
-                        is_unmapped = read.is_unmapped
-                        mapping_quality = read.mapping_quality
-                        if (
-                                read.is_secondary
-                                or read.is_supplementary
-                                or (remove_duplicates and read.is_duplicate)
-                        ):
-                            continue
-
-                        # Read check
-                        sequence = read.query_sequence
+        open_mode = "rb" if bam_path.endswith(".bam") else "rc"
+        with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
+            with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
+                try:
+                    barcode_counts = defaultdict(int) if singlecell_mode else None
+                    for read in bamfile.fetch(contig=chrom, start=start - 1, end=end):
                         try:
-                            read_length = len(sequence)
-                        except (
-                                TypeError
-                        ):  # skip if there is no sequence for read in BAM file
-                            continue
+                            # Track the last file position
+                            current_pos = bamfile.tell()
+                            last_position = max(last_position, current_pos)
 
-                        n_count = sequence.count("N")
-                        read_length_no_N = read_length - n_count
-                        if read_length_no_N > 0 and (n_count / read_length) <= 0.2:
-                            gc_percent = int(
-                                round(
-                                    (sequence.count("C") + sequence.count("G"))
-                                    / read_length_no_N
-                                    * 100
+                            is_unmapped = read.is_unmapped
+                            mapping_quality = read.mapping_quality
+                            if (
+                                    read.is_secondary
+                                    or read.is_supplementary
+                                    or (remove_duplicates and read.is_duplicate)
+                            ):
+                                continue
+
+                            # Read check
+                            sequence = read.query_sequence
+                            try:
+                                read_length = len(sequence)
+                            except (
+                                    TypeError
+                            ):  # skip if there is no sequence for read in BAM file
+                                continue
+
+                            n_count = sequence.count("N")
+                            read_length_no_N = read_length - n_count
+                            if read_length_no_N > 0 and (n_count / read_length) <= 0.2:
+                                gc_percent = int(
+                                    round(
+                                        (sequence.count("C") + sequence.count("G"))
+                                        / read_length_no_N
+                                        * 100
+                                    )
                                 )
-                            )
-                            gc_content[gc_percent] = gc_content.get(gc_percent, 0) + 1
+                                gc_content[gc_percent] = gc_content.get(gc_percent, 0) + 1
 
-                        # Process band information
-                        if is_unmapped or mapping_quality < mapq_threshold:
-                            read_counts["unmapped"]["unmapped"] += 1
-                        else:
-                            ref_name = read.reference_name
-                            # Remove 'chr' prefix if present for matching
-                            if ref_name.startswith("chr"):
-                                ref_name = ref_name[3:]
-
-                            if ref_name not in band_info["bands"]:
+                            # Process band information
+                            if is_unmapped or mapping_quality < mapq_threshold:
                                 read_counts["unmapped"]["unmapped"] += 1
                             else:
-                                pos = read.reference_start
-                                bands = band_info["bands"][ref_name]["bands"]
+                                ref_name = read.reference_name
+                                # Remove 'chr' prefix if present for matching
+                                if ref_name.startswith("chr"):
+                                    ref_name = ref_name[3:]
 
-                                # Binary search for the correct band
-                                left, right = 0, len(bands) - 1
-                                found_band = None
+                                if ref_name not in band_info["bands"]:
+                                    read_counts["unmapped"]["unmapped"] += 1
+                                else:
+                                    pos = read.reference_start
+                                    bands = band_info["bands"][ref_name]["bands"]
 
-                                while left <= right:
-                                    mid = (left + right) // 2
-                                    if pos <= bands[mid]["end"]:
-                                        if mid == 0 or pos > bands[mid - 1]["end"]:
-                                            found_band = bands[mid]
-                                            break
-                                        right = mid - 1
-                                    else:
-                                        left = mid + 1
+                                    # Binary search for the correct band
+                                    left, right = 0, len(bands) - 1
+                                    found_band = None
 
-                                if found_band is None:
-                                    found_band = bands[-1]
+                                    while left <= right:
+                                        mid = (left + right) // 2
+                                        if pos <= bands[mid]["end"]:
+                                            if mid == 0 or pos > bands[mid - 1]["end"]:
+                                                found_band = bands[mid]
+                                                break
+                                            right = mid - 1
+                                        else:
+                                            left = mid + 1
 
-                                if ref_name not in read_counts:
-                                    read_counts[ref_name] = {}
-                                if found_band["name"] not in read_counts[ref_name]:
-                                    read_counts[ref_name][found_band["name"]] = 0
-                                read_counts[ref_name][found_band["name"]] += 1
+                                    if found_band is None:
+                                        found_band = bands[-1]
 
-                        # Barcode counting
-                        if singlecell_mode:
-                            bc = read.get_tag("CB") if read.has_tag("CB") else None
-                            if bc:
-                                barcode_counts[bc] += 1
+                                    if ref_name not in read_counts:
+                                        read_counts[ref_name] = {}
+                                    if found_band["name"] not in read_counts[ref_name]:
+                                        read_counts[ref_name][found_band["name"]] = 0
+                                    read_counts[ref_name][found_band["name"]] += 1
 
-                        # Check if it's a telomere read
-                        if is_telomere_read(
-                                consecutive_flag,
-                                patterns_regex_forward,
-                                patterns_regex_reverse,
-                                sequence,
-                                repeat_threshold_calc,
-                        ):
-                            filtered_file.write(read)
-                            filtered_read_count += 1
-                    except Exception as e:
-                        print(f"Error processing read in region {region_str}: {e}")
-                        traceback.print_exc()
-            except (ValueError, KeyError, MemoryError, OSError) as e:
-                print(f"Error processing region {region_str}: {e}")
-                traceback.print_exc()
-            except Exception as e:
-                print(f"Unexpected error in region {region_str}: {e}")
-                traceback.print_exc()
+                            # Barcode counting
+                            if singlecell_mode:
+                                bc = read.get_tag("CB") if read.has_tag("CB") else None
+                                if bc:
+                                    barcode_counts[bc] += 1
 
-    return {
-        "region": region_info,
-        "gc_content": gc_content,
-        "read_counts": read_counts,
-        "temp_bam": temp_bam,
-        "last_position": last_position,
-        "filtered_read_count": filtered_read_count,
-        "barcode_counts": dict(barcode_counts) if barcode_counts is not None else {},
-    }
+                            # Check if it's a telomere read
+                            if is_telomere_read(
+                                    consecutive_flag,
+                                    patterns_regex_forward,
+                                    patterns_regex_reverse,
+                                    sequence,
+                                    repeat_threshold_calc,
+                            ):
+                                filtered_file.write(read)
+                                filtered_read_count += 1
+                        except Exception as e:
+                            print(f"Error processing read in region {region_str}: {e}")
+                            traceback.print_exc()
+                except (ValueError, KeyError, MemoryError, OSError) as e:
+                    print(f"Error processing region {region_str}: {e}")
+                    traceback.print_exc()
+                except Exception as e:
+                    print(f"Unexpected error in region {region_str}: {e}")
+                    traceback.print_exc()
+
+        return {
+            "region": region_info,
+            "gc_content": gc_content,
+            "read_counts": read_counts,
+            "temp_bam": temp_bam,
+            "last_position": last_position,
+            "filtered_read_count": filtered_read_count,
+            "barcode_counts": dict(barcode_counts) if barcode_counts is not None else {},
+        }
+    except Exception as e:
+        error_info = {
+            "region": args[1] if len(args) > 1 else None,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "args": repr(args),
+        }
+        print(f"[ERROR] Exception in process_region for region {error_info['region']}: {error_info['error']}", file=sys.stderr)
+        print(error_info["traceback"], file=sys.stderr)
+        return error_info
 
 
 def process_unmapped_reads(args):
@@ -520,7 +532,9 @@ def parallel_filter_telomere_reads(
                                     f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
                                 )
                         except Exception as e:
-                            print(f"Error in region processing: {e}")
+                            print("[ERROR] Exception in future.result() in parallel_filter_telomere_reads")
+                            print(f"Error: {e}", file=sys.stderr)
+                            print(traceback.format_exc(), file=sys.stderr)
                 except BrokenProcessPool as bpe:
                     print("ERROR: BrokenProcessPool encountered. One of the subprocesses crashed.")
                     print("This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_region.")
