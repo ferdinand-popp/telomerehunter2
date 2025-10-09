@@ -31,6 +31,7 @@ import time
 
 import pandas as pd
 import pysam
+
 from telomerehunter2 import get_repeat_threshold
 
 
@@ -441,7 +442,27 @@ def combine_summary_files(outdir, pid, tumor_flag, control_flag):
         shutil.copyfile(control_summary_path, summary_path)
 
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+
+def get_version_from_pyproject():
+    # Find pyproject.toml relative to this file
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    pyproject_path = os.path.join(base_dir, "pyproject.toml")
+    try:
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+        return pyproject_data["project"]["version"]
+    except Exception as e:
+        print(f"Could not read version from pyproject.toml: {e}")
+        return "unknown"
+
+
 def print_copyright_message():
+    version = get_version_from_pyproject()
     print("\n")
     print(
         "\tTelomereHunter2 Copyright 2024 Ferdinand Popp, Lina Sieverling, Philip Ginsbach, Chen Hong, Lars Feuerbach"
@@ -455,8 +476,9 @@ def print_copyright_message():
         "\tin the license copy received with TelomereHunter2 or <http://www.gnu.org/licenses/>."
     )
     print("\n")
-    print("TelomereHunter2 1.0.0")
+    print(f"TelomereHunter2 {version}")
     print("\n")
+
 
 def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
     """Calculate read lengths and repeat thresholds for tumor and control samples."""
