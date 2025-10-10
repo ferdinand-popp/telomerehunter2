@@ -440,22 +440,50 @@ def combine_summary_files(outdir, pid, tumor_flag, control_flag):
         shutil.copyfile(control_summary_path, summary_path)
 
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
-
 def get_version_from_pyproject():
-    # Find pyproject.toml relative to this file
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    pyproject_path = os.path.join(base_dir, "pyproject.toml")
+    """
+    Read the project version from pyproject.toml using regex parsing.
+
+    Returns:
+        str: The project version string, or "unknown" if not found
+    """
     try:
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomllib.load(f)
-        return pyproject_data["project"]["version"]
+        # Find pyproject.toml relative to this file
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        pyproject_path = os.path.join(base_dir, "pyproject.toml")
+
+        if not os.path.exists(pyproject_path):
+            print(f"Warning: pyproject.toml not found at {pyproject_path}")
+            return "unknown"
+
+        with open(pyproject_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Find the [project] section and extract version from it
+        # This pattern looks for [project], then captures everything until the next section or EOF
+        project_section_match = re.search(
+            r'^\[project\]\s*\n((?:(?!\[).*\n?)*)',
+            content,
+            re.MULTILINE
+        )
+
+        if not project_section_match:
+            print("Warning: Could not find [project] section in pyproject.toml")
+            return "unknown"
+
+        project_section = project_section_match.group(1)
+
+        # Look for version = "x.y.z" pattern within the [project] section only
+        version_match = re.search(r'^version\s*=\s*["\']([^"\']+)["\']', project_section, re.MULTILINE)
+
+        if version_match:
+            return version_match.group(1)
+
+        print("Warning: Could not find version in [project] section of pyproject.toml")
+        return "unknown"
+
     except Exception as e:
-        print(f"Could not read version from pyproject.toml: {e}")
+        print(f"Warning: Error reading version from pyproject.toml: {e}")
         return "unknown"
 
 

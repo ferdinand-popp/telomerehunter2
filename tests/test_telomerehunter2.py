@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+import sys
 
 import pandas as pd
 import pysam
@@ -149,9 +150,11 @@ class TestTelomereHunter2(unittest.TestCase):
     def run_telomerehunter_package(
         self, bam_file_path, results_path, patient_name, bam_file_path_control=None
     ):
-        """Run the telomerehunter package via command-line interface."""
+        """Run the telomerehunter2 source script via command-line interface."""
+        script_path = self.project_root / "src" / "telomerehunter2" / "telomerehunter2_main.py"
         command = [
-            "telomerehunter2",
+            sys.executable,
+            str(script_path),
             "-ibt",
             str(bam_file_path),
             "-o",
@@ -174,16 +177,13 @@ class TestTelomereHunter2(unittest.TestCase):
             universal_newlines=True,
         )
 
-        for line in proc.stdout:
-            print(line, end="")
-
-        exit_code = proc.wait()
-
-        if exit_code != 0:
-            error_message = proc.stderr.read()
+        stdout, stderr = proc.communicate()  # Capture both stdout and stderr
+        if proc.returncode != 0:
             raise RuntimeError(
-                f"Command failed with exit code {exit_code}. Error: {error_message}"
+                f"Command failed with exit code {proc.returncode}.\n"
+                f"Stdout: {stdout}\nStderr: {stderr}"
             )
+        print(stdout)
 
     def validate_results(self, results_path, expected_result_path):
         """Validate the results of a test run."""
