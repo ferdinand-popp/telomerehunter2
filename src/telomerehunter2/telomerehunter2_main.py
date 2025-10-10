@@ -554,33 +554,30 @@ def run_telomerehunter(
 
 
 def summary_log2(main_path, pid):
-    # Construct the summary file path
     summary_file = os.path.join(main_path, f"{pid}_summary.tsv")
-
-    # Read the summary table
     summary = pd.read_csv(summary_file, sep="\t", header=0)
 
-    # Check which samples were run
     samples = summary["sample"]
 
-    # If both "tumor" and "control" were run, calculate summary
-    if "tumor" in samples.values and "control" in samples.values:
-        start_log_index = 13  # tel_content and TRPM
-        tumor_row = (
-            summary.loc[samples == "tumor"].iloc[:, start_log_index:].fillna(0).values
-        )
-        control_row = (
-            summary.loc[samples == "control"].iloc[:, start_log_index:].fillna(0).values
-        )
+    # Select columns for log2 calculation
+    log2_cols = [
+        col for col in summary.columns
+        if col == "tel_content"
+        or "_arbitrary_context_norm_by_intratel_reads" in col
+        or "_singletons_norm_by_all_reads" in col
+    ]
 
-        log2_values = np.empty_like(
-            tumor_row, dtype=float
-        )  # Creating an empty array to hold the result
+    # Indices for log2 columns
+    log2_indices = [summary.columns.get_loc(col) for col in log2_cols]
+
+    if "tumor" in samples.values and "control" in samples.values:
+        tumor_row = summary.loc[samples == "tumor"].iloc[:, log2_indices].fillna(0).values
+        control_row = summary.loc[samples == "control"].iloc[:, log2_indices].fillna(0).values
+
+        log2_values = np.empty_like(tumor_row, dtype=float)
         log2_values.fill(np.nan)
         mask = (control_row != 0.0) & (tumor_row != 0.0)
         log2_values[mask] = np.log2(np.divide(tumor_row[mask], control_row[mask]))
-
-        # Replace inf and -inf with np.nan
         log2_values[np.isinf(log2_values)] = np.nan
 
         # Create a new row with [pid, "log2(tumor/control)"] and non-log empty columns
@@ -588,17 +585,35 @@ def summary_log2(main_path, pid):
             [[pid, "log2(tumor/control)"] + [np.nan] * (len(summary.columns) - 2)],
             columns=summary.columns,
         )
-
         # Add the calculated log2 values to the new row
-        new_row.iloc[0, start_log_index:] = log2_values.flatten()
+        for idx, col in zip(log2_indices, log2_cols):
+            new_row.iloc[0, idx] = log2_values[0, log2_cols.index(col)]
 
-        # Append the new row to the summary table
         summary = pd.concat([summary, new_row], ignore_index=True)
 
-    # convert cols to right type
     summary = summary.convert_dtypes()
+    summary.to_csv(summary_file, sep="\t", index=False)
 
-    # Save extended summary table
+
+def prepare_summary_file(main_path, pid):
+    summary_file = os.path.join(main_path, f"{pid}_summary.tsv")
+    summary = pd.read_csv(summary_file, sep="\t", header=0)
+
+    # Rename 'read_length' to 'read_lengths'
+    if 'read_length' in summary.columns:
+        summary = summary.rename(columns={'read_length': 'read_lengths'})
+
+    # Remove 'TRPM' column if present
+    if 'TRPM' in summary.columns:
+        summary = summary.drop(columns=['TRPM'])
+
+    # Move 'tel_content' to third column if present
+    cols = list(summary.columns)
+    if 'tel_content' in cols:
+        cols.remove('tel_content')
+        cols.insert(2, 'tel_content')
+        summary = summary[cols]
+
     summary.to_csv(summary_file, sep="\t", index=False)
 
 
@@ -768,6 +783,9 @@ def main():
     # make a combined summary file of tumor and control results
     combine_summary_files(args.outdir, args.pid, args.tumor_flag, args.control_flag)
 
+    # Prepare summary file: rename, reorder, remove columns
+    prepare_summary_file(args.outdir, args.pid)
+
     # close possible temp dir
     delete_temp_dir(tumor_bam, control_bam, temp_dir="tmp_TH2")
 
@@ -792,6 +810,7 @@ def main():
     # add log2 ratio to summary file
     if args.tumor_flag and args.control_flag:
         summary_log2(args.outdir, args.pid)
+
 
     ###############
     ## Plotting ###

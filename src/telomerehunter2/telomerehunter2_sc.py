@@ -178,7 +178,7 @@ def prepare_summary(barcodes_above, barcode_df, barcode_counts, barcode_tvr_coun
     total_reads_with_tel_gc = int(summary_df['total_reads_with_tel_gc'].values[0])
     total_reads = int(summary_df['total_reads'].values[0])
     pid = str(summary_df['PID'].values[0])
-    read_length = str(summary_df['read_length'].values[0])
+    read_length = str(summary_df['read_lengths'].values[0])
     repeat_threshold_set = str(summary_df['repeat_threshold_set'].values[0])
     repeat_threshold_used = str(summary_df['repeat_threshold_used'].values[0])
     gc_bins_for_correction = str(summary_df['gc_bins_for_correction'].values[0])

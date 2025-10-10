@@ -96,9 +96,9 @@ class TestSCTelomereHunter2(unittest.TestCase):
         tvr_100bp = [f"{tvr}_arbitrary_context_per_100bp_intratel_read" for tvr in TVR_HEXAMERS]
         tvr_singletons = [f"{tvr}_singletons_norm_by_all_reads" for tvr in TVR_HEXAMERS]
         std_columns = [
-            'PID', 'sample', 'total_reads', 'read_length', 'repeat_threshold_set', 'repeat_threshold_used',
+            'PID', 'sample', 'tel_content', 'total_reads', 'read_lengths', 'repeat_threshold_set', 'repeat_threshold_used',
             'intratelomeric_reads', 'junctionspanning_reads', 'subtelomeric_reads', 'intrachromosomal_reads',
-            'tel_read_count', 'gc_bins_for_correction', 'total_reads_with_tel_gc', 'tel_content', 'TRPM'
+            'tel_read_count', 'gc_bins_for_correction', 'total_reads_with_tel_gc'
         ]
         expected_columns = std_columns + tvr_arbitrary + tvr_100bp + tvr_singletons
         self.assertEqual(list(df.columns), expected_columns, f"SC summary columns are not in the expected order.\nExpected: {expected_columns}\nFound: {list(df.columns)}")
