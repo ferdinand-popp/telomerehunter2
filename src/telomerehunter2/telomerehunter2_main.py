@@ -433,7 +433,7 @@ def parse_command_line_arguments():
         "-pff",
         "--plotFileFormat",
         dest="plotFileFormat",
-        default="pdf",
+        default=["pdf", "html"],
         choices=["pdf", "png", "svg", "html", "all"],
         help=(
             "File format of output diagrams. Choose from: "
