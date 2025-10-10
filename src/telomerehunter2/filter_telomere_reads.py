@@ -28,8 +28,7 @@ from concurrent.futures.process import BrokenProcessPool
 
 import pysam
 
-from telomerehunter2.utils import (get_band_info, get_reverse_complement,
-                                   measure_time)
+from telomerehunter2.utils import (get_band_info, get_reverse_complement)
 
 
 def compile_patterns(repeats):
@@ -387,8 +386,12 @@ def process_unmapped_reads(args):
                 print(f"Unexpected error in unmapped reads: {e}")
                 traceback.print_exc()
 
-    print(f"Total reads processed: {total_reads_processed}")
-    print(f"Total telomeric reads found: {filtered_read_count}")
+    if total_reads_processed == 0:
+        print(
+            "!!! Warning: No unmapped reads found. Please check the input BAM/CRAM file for completeness. !!!")
+    else:
+        print(f"Total unmapped reads processed: {total_reads_processed}")
+        print(f"Total telomeric reads found in unmapped reads: {filtered_read_count}")
 
     return {
         "region": "unmapped",
@@ -400,7 +403,6 @@ def process_unmapped_reads(args):
     }
 
 
-@measure_time
 def parallel_filter_telomere_reads(
         bam_path,
         out_dir,

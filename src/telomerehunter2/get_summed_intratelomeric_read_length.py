@@ -21,15 +21,12 @@ import os
 
 import pysam
 
-from telomerehunter2.utils import measure_time
 
 #########################################################################
 ### gives the sum of all intratelomeric read lengths (base pairs)     ###
 ### secondary and supplementary alignments are skipped                ###
 #########################################################################
 
-
-@measure_time
 def summed_intratelomeric_read_length(main_path, pid, sample):
     """
     Calculate the sum of intratelomeric read lengths and save the result in a TSV file.

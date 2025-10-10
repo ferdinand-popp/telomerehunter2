@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import pandas as pd
 import pysam
 from telomerehunter2 import filter_telomere_reads

@@ -22,14 +22,14 @@ import re
 
 import pysam
 
-from telomerehunter2.utils import get_reverse_complement, measure_time
+from telomerehunter2.utils import get_reverse_complement
+
 
 ###############################################################################################
 ### get the distribution of telomeric repeats per intratelomeric read in the input BAM file ###
 ###############################################################################################
 
 
-@measure_time
 def repeat_frequency_intratelomeric(input_path, out_dir, pid, repeats):
     ################################################
     ### get patterns and make regular expression ###

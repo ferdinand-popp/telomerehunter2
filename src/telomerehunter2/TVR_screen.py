@@ -22,8 +22,7 @@ import re
 
 import pysam
 
-from telomerehunter2.utils import (assure_dir_exists, get_reverse_complement,
-                                   measure_time)
+from telomerehunter2.utils import (assure_dir_exists, get_reverse_complement)
 
 ##################################################################################################################################################################
 ### script loops through filtered BAM file containing intratelomeric reads and searches for patterns of the type XXXGGG (and reverse complement)               ###
@@ -189,7 +188,6 @@ def show_patterns(pattern_dict, qualities_dict):
     return output
 
 
-@measure_time
 def tvr_screen(
     main_path,
     pid,

@@ -24,14 +24,12 @@ import numpy
 import pandas as pd
 import pysam
 
-from telomerehunter2.utils import measure_time
 
 ##################################################################
 ### get the gc content distribution of the reads in a bam file ###
 ##################################################################
 
 
-@measure_time
 def get_gc_content_distribution(bam_file, out_dir, pid, sample, remove_duplicates):
     """
     Get the GC content distribution of the reads in a BAM file.
@@ -48,12 +46,12 @@ def get_gc_content_distribution(bam_file, out_dir, pid, sample, remove_duplicate
     for read in bamfile.fetch(until_eof=True):
 
         if (
-            read.is_secondary
+                read.is_secondary
         ):  # skips all secondary alignments (only needed for RNA analysis!)
             continue
 
         if (
-            remove_duplicates and read.is_duplicate
+                remove_duplicates and read.is_duplicate
         ):  # if duplicate flag is set: skip all reads that are flagged as optical or PCR duplicate
             continue
 
@@ -95,18 +93,17 @@ def get_gc_content_distribution(bam_file, out_dir, pid, sample, remove_duplicate
 ####################################################################################################
 
 
-@measure_time
 def estimate_telomere_content(
-    input_dir,
-    out_dir,
-    pid,
-    sample,
-    read_length,
-    repeat_threshold_set,
-    per_read_length,
-    repeat_threshold_str,
-    gc_lower,
-    gc_upper,
+        input_dir,
+        out_dir,
+        pid,
+        sample,
+        read_length,
+        repeat_threshold_set,
+        per_read_length,
+        repeat_threshold_str,
+        gc_lower,
+        gc_upper,
 ):
     """
     Estimate telomere content in telomeric reads per million reads with similar GC content.
@@ -227,7 +224,7 @@ def get_total_read_count(input_dir, pid):
     read_count_array = [
         x.split("\t")[2].strip() for x in open(read_count_file).readlines()
     ]
-    read_count_array = [int(x) for x in read_count_array[1 : len(read_count_array)]]
+    read_count_array = [int(x) for x in read_count_array[1: len(read_count_array)]]
     total_read_count = sum(read_count_array)
     return total_read_count
 
