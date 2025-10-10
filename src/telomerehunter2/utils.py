@@ -30,6 +30,7 @@ import time
 
 import pandas as pd
 import pysam
+import plotly.graph_objects as go
 
 from telomerehunter2 import get_repeat_threshold
 
@@ -367,7 +368,22 @@ def validate_plotting_options(args):
     if isinstance(args.plotFileFormat, str):
         args.plotFileFormat = [args.plotFileFormat]
     if args.plotFileFormat == "all":
-        args.plotFileFormat = ["pdf", "png", "svg"]
+        args.plotFileFormat = ["pdf", "png", "svg", "html"]
+
+    # Kaleido check static export
+    try:
+        fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
+        img_path = "test_plot.png"
+        fig.write_image(img_path)
+        if os.path.exists(img_path):
+            os.remove(img_path)
+    except Exception as e:
+        print(
+            "Warning: Kaleido package or Chromium is not installed or an error occurred. "
+            "Removing plotting"
+        )
+        args.plotNone = True
+
 
     # if no plotting options are selected: plot all diagrams.
     if (

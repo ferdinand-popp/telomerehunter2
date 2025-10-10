@@ -357,7 +357,7 @@ def parse_command_line_arguments():
         help="Enable barcode counting/output for single-cell BAMs (CB tag). Default: auto-detect if CB tags present.",
     )
     running_group.add_argument(
-        "-fm",
+        "-fast",
         "--fast_mode",
         dest="fast_mode",
         action="store_true",
@@ -434,8 +434,12 @@ def parse_command_line_arguments():
         "--plotFileFormat",
         dest="plotFileFormat",
         default="pdf",
-        choices=["pdf", "png", "svg", "all"],
-        help="File format of output diagrams. Choose from pdf (default), png, svg or all (pdf, png and svg).",
+        choices=["pdf", "png", "svg", "html", "all"],
+        help=(
+            "File format of output diagrams. Choose from: "
+            "'pdf' (default), 'png', 'svg', 'html', or 'all' (generates all formats). "
+            "The 'html' option creates interactive Plotly HTML files."
+        ),
     )
 
     # Create dict from parser args and save keys as variables
@@ -550,7 +554,6 @@ def run_telomerehunter(
         if args.run_parallel:
             for future in submitted_futures:
                 future.result()
-
 
 
 def summary_log2(main_path, pid):
@@ -810,7 +813,6 @@ def main():
     # add log2 ratio to summary file
     if args.tumor_flag and args.control_flag:
         summary_log2(args.outdir, args.pid)
-
 
     ###############
     ## Plotting ###
