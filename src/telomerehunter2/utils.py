@@ -372,18 +372,21 @@ def validate_plotting_options(args):
 
     # Kaleido check static export
     try:
+        import plotly.graph_objects as go
         fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
         img_path = "test_plot.png"
         fig.write_image(img_path)
         if os.path.exists(img_path):
             os.remove(img_path)
+    except ImportError:
+        print("Warning: Plotly is not installed. Removing plotting with --plotNone.")
+        args.plotNone = True
     except Exception as e:
         print(
             "Warning: Kaleido package or Chromium is not installed or an error occurred. "
-            "Removing plotting"
+            "Removing all formats except HTML from --plotFileFormat."
         )
-        args.plotNone = True
-
+    args.plotFileFormat = [fmt for fmt in args.plotFileFormat if fmt == "html"]
 
     # if no plotting options are selected: plot all diagrams.
     if (

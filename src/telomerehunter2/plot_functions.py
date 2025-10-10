@@ -64,22 +64,25 @@ def save_plot(
 ):
     """Save plot in multiple formats."""
     for fmt in formats:
-        output_path = os.path.join(outdir, "plots", f"{name}.{fmt}")
-        try:
-            (
-                fig.write_image(output_path, width=width)
-                if not height
-                else fig.write_image(output_path, width=width, height=height)
-            )
-        except Exception as e:
-            print(f"Error saving plot in {fmt} format: {str(e)}")
+        if fmt == "html":
+            # Save interactive HTML version
+            html_path = os.path.join(outdir, "html_reports", f"{name}.html")
+            try:
+                fig.write_html(html_path)
+            except Exception as e:
+                print(f"Error saving HTML plot: {str(e)}")
+        else:
+            # Save static image
+            output_path = os.path.join(outdir, "plots", f"{name}.{fmt}")
+            try:
+                (
+                    fig.write_image(output_path, width=width)
+                    if not height
+                    else fig.write_image(output_path, width=width, height=height)
+                )
+            except Exception as e:
+                print(f"Error saving plot in {fmt} format: {str(e)}")
 
-    # Save interactive HTML version
-    html_path = os.path.join(outdir, "html_reports", f"{name}.html")
-    try:
-        fig.write_html(html_path)
-    except Exception as e:
-        print(f"Error saving HTML plot: {str(e)}")
 
 
 def validate_data(df, required_columns):

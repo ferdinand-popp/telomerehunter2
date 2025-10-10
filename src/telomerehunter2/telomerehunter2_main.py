@@ -621,9 +621,11 @@ def prepare_summary_file(main_path, pid):
 
 
 def run_plots(args, outdir, pid, repeat_thresholds_plot):
-    if not args.plotNone:
-        print("------ making plots ------\n")
-        # Create plot directory
+    print("------ making plots ------\n")
+    if args.plotNone:
+        print("All plots skipped as 'plotNone' is active.")
+    else:
+        # Create plots directory
         os.makedirs(
             os.path.join(outdir, "plots"), exist_ok=True
         )  # all plots there except summary in outdir
