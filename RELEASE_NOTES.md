@@ -1,5 +1,17 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.2 (2025-10-10)
+
+### Highlights
+- Added documentation for interpretation of summary.tsv in README.md
+- refactored summary.tsv columns order and names
+- added warning for runs that show no unmapped reads
+- plotting default set to ['pdf', 'html]', of which html can be generated with plotly and pdf if kaleido can access chromium, errors are now caught
+- version retrieval in utils.py now with regex as toml dependency varied for python versions
+- removed measure_time decorator from development
+- general code cleanup
+
+
 ## v1.0.1 (2025-10-02)
 
 ### Highlights
