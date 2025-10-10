@@ -288,7 +288,6 @@ def process_region(args):
 
 def process_unmapped_reads(args):
     """Process unmapped reads from a BAM file starting from a specific position."""
-    print("Processing unmapped reads")
     (
         bam_path,
         patterns_regex_forward,
@@ -302,9 +301,6 @@ def process_unmapped_reads(args):
         singlecell_mode,  # Add singlecell_mode to args
     ) = args
 
-    print(f"Filtering parameters: consecutive_flag={consecutive_flag}, repeat_threshold_calc={repeat_threshold_calc}")
-    print(f"Patterns (forward): {patterns_regex_forward.pattern}")
-    print(f"Patterns (reverse): {patterns_regex_reverse.pattern}")
 
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
@@ -455,6 +451,7 @@ def parallel_filter_telomere_reads(
 
         # FAST MODE: Only process unmapped reads, skip region-based processing
         if fast_mode:
+            print("---")
             print("Fast mode: Skipping region-based processing, only processing unmapped reads.")
             unmapped_args = (
                 bam_path,
@@ -487,6 +484,7 @@ def parallel_filter_telomere_reads(
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
         else:
+            print("---")
             # First process all mapped regions
             regions = [(ref, 1, length) for ref, length in zip(references, lengths)]
             with ProcessPoolExecutor(max_workers=num_processes) as executor:
@@ -534,6 +532,7 @@ def parallel_filter_telomere_reads(
                     raise
 
             # Process unmapped reads
+            print("---")
             print(f"Processing unmapped reads from position: {max_position}")
             unmapped_args = (
                 bam_path,
