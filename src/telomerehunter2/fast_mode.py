@@ -85,17 +85,17 @@ def create_fast_mode_sample_summary(args, sample_out_dir, bam_path, sample_name,
     summary = {
         "PID": args.pid,
         "sample": sample_name,
+        "Tel_reads_per_million_reads": f"{TRPM:.6f}",
         "total_reads": total_count,
-        "read_length": read_lengths_str,
+        "read_lengths": read_lengths_str,
         "repeat_threshold_set": trpm_threshold,
         "repeat_threshold_used": trpm_threshold,
         "tel_read_count": tel_read_count,
-        "TRPM": f"{TRPM:.6f}",
         "unmapped_reads": unmapped_reads
     }
 
     summary_path = os.path.join(sample_out_dir, f"{args.pid}_{sample_name}_summary.tsv")
-    header = list(summary.keys())
+    header = ["PID", "sample", "tel_content", "total_reads", "read_lengths", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "unmapped_reads"]
     with open(summary_path, 'w') as f:
         f.write("\t".join(header) + "\n")
         f.write("\t".join(str(summary[h]) for h in header) + "\n")
@@ -104,10 +104,7 @@ def create_fast_mode_sample_summary(args, sample_out_dir, bam_path, sample_name,
 
 
 def write_fast_mode_combined_summary(args, out_dir, tumor_summary, control_summary):
-    header = [
-        "PID", "sample", "total_reads", "read_length", "repeat_threshold_set",
-        "repeat_threshold_used", "tel_read_count", "TRPM", "unmapped_reads"
-    ]
+    header = ["PID", "sample", "tel_content", "total_reads", "read_lengths", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "unmapped_reads"]
     rows = []
     tumor_trpm = None
     control_trpm = None
@@ -121,13 +118,6 @@ def write_fast_mode_combined_summary(args, out_dir, tumor_summary, control_summa
     if control_summary:
         rows.append(map_row(control_summary))
         control_trpm = float(control_summary.get("TRPM", 0))
-
-    if tumor_trpm and control_trpm and control_trpm > 0 and tumor_trpm > 0:
-        log2_trpm = np.log2(tumor_trpm / control_trpm)
-        log2_row = [args.pid, "log2(tumor/control)"] + ["NA"] * (len(header) - 3)
-        log2_row[header.index("TRPM")] = f"{log2_trpm:.6f}"
-        log2_row.append("NA")
-        rows.append(log2_row)
 
     combined_summary_path = os.path.join(out_dir, f"{args.pid}_summary.tsv")
     with open(combined_summary_path, 'w') as f:

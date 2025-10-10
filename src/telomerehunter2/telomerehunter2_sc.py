@@ -198,7 +198,6 @@ def prepare_summary(barcodes_above, barcode_df, barcode_counts, barcode_tvr_coun
         tel_read_count = intratelomeric_reads + junctionspanning_reads + subtelomeric_reads + intrachromosomal_reads
         bc_total_reads_with_tel_gc = (total_reads_with_tel_gc / total_reads) * bc_total_reads
         tel_content = (float(intratelomeric_reads) / float(bc_total_reads_with_tel_gc) * 1e6) if bc_total_reads_with_tel_gc > 0 else np.nan
-        trpm = (float(tel_read_count) / float(bc_total_reads) * 1e6) if bc_total_reads > 0 else np.nan
 
         # Get TVR and singleton counts
         patterns = barcode_tvr_counts.get(barcode, {tvr: 0 for tvr in TVR_HEXAMERS})
@@ -220,8 +219,9 @@ def prepare_summary(barcodes_above, barcode_df, barcode_counts, barcode_tvr_coun
         summary_row = {
             'PID': pid,
             'sample': barcode,
+            'tel_content': tel_content,
             'total_reads': bc_total_reads,
-            'read_length': read_length,
+            'read_lengths': read_length,
             'repeat_threshold_set': repeat_threshold_set,
             'repeat_threshold_used': repeat_threshold_used,
             'intratelomeric_reads': intratelomeric_reads,
@@ -231,8 +231,6 @@ def prepare_summary(barcodes_above, barcode_df, barcode_counts, barcode_tvr_coun
             'tel_read_count': tel_read_count,
             'gc_bins_for_correction': gc_bins_for_correction,
             'total_reads_with_tel_gc': bc_total_reads_with_tel_gc,
-            'tel_content': tel_content,
-            'TRPM': trpm,
             **context_norm,
             **context_norm_100bp,
             **singleton_norm,
@@ -354,9 +352,9 @@ def main():
 
         # Standard columns
         std_columns = [
-            'PID', 'sample', 'total_reads', 'read_length', 'repeat_threshold_set', 'repeat_threshold_used',
+            'PID', 'sample', 'tel_content', 'total_reads', 'read_lengths', 'repeat_threshold_set', 'repeat_threshold_used',
             'intratelomeric_reads', 'junctionspanning_reads', 'subtelomeric_reads', 'intrachromosomal_reads',
-            'tel_read_count', 'gc_bins_for_correction', 'total_reads_with_tel_gc', 'tel_content', 'TRPM'
+            'tel_read_count', 'gc_bins_for_correction', 'total_reads_with_tel_gc'
         ]
 
         # All columns
