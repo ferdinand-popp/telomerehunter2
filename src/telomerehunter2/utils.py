@@ -367,10 +367,11 @@ def validate_plotting_options(args):
     # can be str or list so change to list
     if isinstance(args.plotFileFormat, str):
         args.plotFileFormat = [args.plotFileFormat]
-    if args.plotFileFormat == "all":
+    if args.plotFileFormat == ["all"] or args.plotFileFormat == "all":
         args.plotFileFormat = ["pdf", "png", "svg", "html"]
 
     # Kaleido check static export
+    static_export_failed = False
     try:
         import plotly.graph_objects as go
         fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
@@ -381,12 +382,16 @@ def validate_plotting_options(args):
     except ImportError:
         print("Warning: Plotly is not installed. Removing plotting with --plotNone.")
         args.plotNone = True
+        static_export_failed = True
     except Exception as e:
         print(
             "Warning: Kaleido package or Chromium is not installed or an error occurred. "
             "Removing all formats except HTML from --plotFileFormat."
         )
-    args.plotFileFormat = [fmt for fmt in args.plotFileFormat if fmt == "html"]
+        static_export_failed = True
+    if static_export_failed:
+        args.plotFileFormat = ["html"]
+    # else: keep all user-specified formats
 
     # if no plotting options are selected: plot all diagrams.
     if (

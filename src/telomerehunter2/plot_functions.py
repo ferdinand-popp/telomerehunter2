@@ -26,6 +26,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
 
+os.environ["KALIEDO_EXE_OPTIONS"] = "--no-sandbox"
 pio.kaleido.scope.mathjax = None
 
 from telomerehunter2.utils import get_band_info, get_reverse_complement

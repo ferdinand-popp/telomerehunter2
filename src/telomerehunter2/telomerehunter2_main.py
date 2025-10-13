@@ -61,107 +61,113 @@ def run_sample(
         filter_telomere_reads_flag,
         args,
 ):
-    if getattr(args, "singlecell_mode", False):
-        print(f"[TH2] Running sample '{sample_name}' in single-cell mode.")
+    try:
+        if getattr(args, "singlecell_mode", False):
+            print(f"[TH2] Running sample '{sample_name}' in single-cell mode.")
 
-    if filter_telomere_reads_flag:
-        print(f"------ {sample_name}: started filtering telomere reads ------")
-        filter_telomere_reads.parallel_filter_telomere_reads(
-            bam_path=sample_bam,
-            out_dir=outdir_sample,
-            pid=args.pid,
-            sample=sample_id,
-            repeat_threshold_calc=repeat_threshold_calc,
-            mapq_threshold=args.mapq_threshold,
-            repeats=args.repeats,
-            consecutive_flag=args.consecutive,
-            remove_duplicates=args.remove_duplicates,
-            band_file=args.banding_file,
-            num_processes=args.cores,
-            singlecell_mode=getattr(args, "singlecell_mode", False),
-        )
+        if filter_telomere_reads_flag:
+            print(f"------ {sample_name}: started filtering telomere reads ------")
+            filter_telomere_reads.parallel_filter_telomere_reads(
+                bam_path=sample_bam,
+                out_dir=outdir_sample,
+                pid=args.pid,
+                sample=sample_id,
+                repeat_threshold_calc=repeat_threshold_calc,
+                mapq_threshold=args.mapq_threshold,
+                repeats=args.repeats,
+                consecutive_flag=args.consecutive,
+                remove_duplicates=args.remove_duplicates,
+                band_file=args.banding_file,
+                num_processes=args.cores,
+                singlecell_mode=getattr(args, "singlecell_mode", False),
+            )
 
-    if args.sort_telomere_reads_flag:
-        print("------ " + sample_name + ": started sorting telomere reads ------")
-        sort_telomere_reads.sort_telomere_reads(
-            input_dir=outdir_sample,
-            out_dir=outdir_sample,
-            band_file=args.banding_file,
-            pid=args.pid,
-            mapq_threshold=args.mapq_threshold,
-            repeats=args.repeats,
-        )
+        if args.sort_telomere_reads_flag:
+            print("------ " + sample_name + ": started sorting telomere reads ------")
+            sort_telomere_reads.sort_telomere_reads(
+                input_dir=outdir_sample,
+                out_dir=outdir_sample,
+                band_file=args.banding_file,
+                pid=args.pid,
+                mapq_threshold=args.mapq_threshold,
+                repeats=args.repeats,
+            )
 
-        # get a table with repeat frequencies per intratelomeric read
-        repeat_frequency_intratelomeric.repeat_frequency_intratelomeric(
-            input_path=outdir_sample,
-            out_dir=outdir_sample,
-            pid=args.pid,
-            repeats=args.repeats,
-        )
+            # get a table with repeat frequencies per intratelomeric read
+            repeat_frequency_intratelomeric.repeat_frequency_intratelomeric(
+                input_path=outdir_sample,
+                out_dir=outdir_sample,
+                pid=args.pid,
+                repeats=args.repeats,
+            )
 
-    if args.estimate_telomere_content_flag:
-        print("------ " + sample_name + ": started estimating telomere content ------")
+        if args.estimate_telomere_content_flag:
+            print("------ " + sample_name + ": started estimating telomere content ------")
 
-        estimate_telomere_content.get_gc_content_distribution(
-            bam_file=os.path.join(
-                outdir_sample, f"{args.pid}_filtered_intratelomeric.bam"
-            ),
-            out_dir=outdir_sample,
-            pid=f"{args.pid}_intratelomeric",
-            sample=sample_id,
-            remove_duplicates=args.remove_duplicates,
-        )
+            estimate_telomere_content.get_gc_content_distribution(
+                bam_file=os.path.join(
+                    outdir_sample, f"{args.pid}_filtered_intratelomeric.bam"
+                ),
+                out_dir=outdir_sample,
+                pid=f"{args.pid}_intratelomeric",
+                sample=sample_id,
+                remove_duplicates=args.remove_duplicates,
+            )
 
-        estimate_telomere_content.estimate_telomere_content(
-            input_dir=outdir_sample,
-            out_dir=outdir_sample,
-            sample=sample_id,
-            read_length=read_length,
-            repeat_threshold_str=repeat_threshold_str,
-            pid=args.pid,
-            repeat_threshold_set=args.repeat_threshold_set,
-            per_read_length=args.per_read_length,
-            gc_lower=args.gc_lower,
-            gc_upper=args.gc_upper,
-        )
+            estimate_telomere_content.estimate_telomere_content(
+                input_dir=outdir_sample,
+                out_dir=outdir_sample,
+                sample=sample_id,
+                read_length=read_length,
+                repeat_threshold_str=repeat_threshold_str,
+                pid=args.pid,
+                repeat_threshold_set=args.repeat_threshold_set,
+                per_read_length=args.per_read_length,
+                gc_lower=args.gc_lower,
+                gc_upper=args.gc_upper,
+            )
 
-    if args.TVR_screen_flag:
-        print("------ " + sample_name + ": started TVR screen ------")
+        if args.TVR_screen_flag:
+            print("------ " + sample_name + ": started TVR screen ------")
 
-        # screen for TVRs
-        TVR_screen.tvr_screen(
-            main_path=outdir_sample,
-            sample=sample_id,
-            telomere_pattern="(.{3})(GGG)",
-            min_base_quality=20,
-            pid=args.pid,
-            repeat_threshold_set=args.repeat_threshold_set,
-        )
-
-        # get summed intratelomeric read length
-        get_summed_intratelomeric_read_length.summed_intratelomeric_read_length(
-            main_path=outdir_sample, sample=sample_id, pid=args.pid
-        )
-
-    if args.TVR_context_flag:
-        print("------ " + sample_name + ": started TVR context ------")
-
-        # get context of selected TVRs
-        # Todo not possible for flexible hexamers yet due to GGG and number of positions interesting
-        for TVR in args.TVRs_for_context:
-            TVR_context.tvr_context(
+            # screen for TVRs
+            TVR_screen.tvr_screen(
                 main_path=outdir_sample,
                 sample=sample_id,
-                pattern=TVR,
+                telomere_pattern="(.{3})(GGG)",
                 min_base_quality=20,
-                telomere_pattern="GGG",
-                tel_file="filtered_intratelomeric",
                 pid=args.pid,
-                context_before=args.bp_context,
-                context_after=args.bp_context,
                 repeat_threshold_set=args.repeat_threshold_set,
             )
+
+            # get summed intratelomeric read length
+            get_summed_intratelomeric_read_length.summed_intratelomeric_read_length(
+                main_path=outdir_sample, sample=sample_id, pid=args.pid
+            )
+
+        if args.TVR_context_flag:
+            print("------ " + sample_name + ": started TVR context ------")
+
+            # get context of selected TVRs
+            # Todo not possible for flexible hexamers yet due to GGG and number of positions interesting
+            for TVR in args.TVRs_for_context:
+                TVR_context.tvr_context(
+                    main_path=outdir_sample,
+                    sample=sample_id,
+                    pattern=TVR,
+                    min_base_quality=20,
+                    telomere_pattern="GGG",
+                    tel_file="filtered_intratelomeric",
+                    pid=args.pid,
+                    context_before=args.bp_context,
+                    context_after=args.bp_context,
+                )
+        return {"status": "success"}
+    except Exception as e:
+        print(f"[ERROR] Exception in run_sample for {sample_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "error": str(e)}
 
 
 def parse_command_line_arguments():
@@ -482,8 +488,11 @@ def run_telomerehunter(
         repeat_thresholds_tumor,
         tumor_bam,
 ):
-    # Determine maximum number of workers based on parallel execution setting
-    max_workers = 1 if not args.run_parallel else min(2, multiprocessing.cpu_count())
+    # Determine maximum number of workers based on parallel execution setting and user input
+    if args.run_parallel:
+        max_workers = args.cores if args.cores is not None else min(2, multiprocessing.cpu_count())
+    else:
+        max_workers = 1
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         submitted_futures = []
