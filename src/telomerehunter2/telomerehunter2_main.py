@@ -59,6 +59,7 @@ def run_sample(
         repeat_threshold_calc,
         repeat_threshold_str,
         filter_telomere_reads_flag,
+        region_cores,
         args,
 ):
     try:
@@ -78,7 +79,7 @@ def run_sample(
                 consecutive_flag=args.consecutive,
                 remove_duplicates=args.remove_duplicates,
                 band_file=args.banding_file,
-                num_processes=args.cores,
+                num_processes=region_cores,
                 singlecell_mode=getattr(args, "singlecell_mode", False),
             )
 
@@ -488,15 +489,27 @@ def run_telomerehunter(
         repeat_thresholds_tumor,
         tumor_bam,
 ):
+    # Determine available CPU cores
+    available_cores = multiprocessing.cpu_count()
     # Determine maximum number of workers based on parallel execution setting and user input
     if args.run_parallel:
-        max_workers = args.cores if args.cores is not None else min(2, multiprocessing.cpu_count())
+        # Divide available cores between tumor and control
+        if args.cores is not None:
+            max_workers = min(args.cores, 2)
+            region_cores = max(1, args.cores // max_workers)
+        else:
+            max_workers = min(2, available_cores)
+            region_cores = max(1, available_cores // max_workers)
     else:
         max_workers = 1
-
+        region_cores = args.cores if args.cores is not None else available_cores
+    # Warn if region_cores exceeds available_cores
+    if region_cores > available_cores:
+        print(f"Warning: Requested region cores ({region_cores}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
+        region_cores = available_cores
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        submitted_futures = []
 
+        submitted_futures = []
         # run tumor sample for PID
         if args.tumor_flag and (
                 filter_telomere_reads_tumor
@@ -507,8 +520,8 @@ def run_telomerehunter(
             tumor_output_dir = os.path.join(
                 args.outdir, f"{tumor_sample_id}_TelomerCnt_{args.pid}"
             )
-            os.makedirs(tumor_output_dir, exist_ok=True)
 
+            os.makedirs(tumor_output_dir, exist_ok=True)
             # Submit to run_sample main function
             tumor_future = executor.submit(
                 run_sample,
@@ -520,6 +533,7 @@ def run_telomerehunter(
                 repeat_threshold_calc=repeat_thresholds_tumor,
                 repeat_threshold_str=repeat_thresholds_str_tumor,
                 filter_telomere_reads_flag=filter_telomere_reads_tumor,
+                region_cores=region_cores,
                 args=args,
             )
 
@@ -551,6 +565,7 @@ def run_telomerehunter(
                 repeat_threshold_calc=repeat_thresholds_control,
                 repeat_threshold_str=repeat_thresholds_str_control,
                 filter_telomere_reads_flag=filter_telomere_reads_control,
+                region_cores=region_cores,
                 args=args,
             )
 

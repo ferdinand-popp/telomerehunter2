@@ -418,16 +418,22 @@ def parallel_filter_telomere_reads(
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
     """
-
+    # Determine available CPU cores
+    available_cores = mp.cpu_count()
+    # Use num_processes if provided, else use all available cores
+    if num_processes is None:
+        num_workers = available_cores
+    else:
+        num_workers = min(num_processes, available_cores)
+    if num_workers > available_cores:
+        print(f"Warning: Requested region cores ({num_workers}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
+        num_workers = available_cores
     # Create a temporary directory within the output directory
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
     os.makedirs(temp_dir, exist_ok=True)
 
     try:
-        if num_processes is None:
-            num_processes = mp.cpu_count()
-        print(f"Using {num_processes} cores")
-
+        print(f"Using {num_workers} cores for region-based parallelism")
         # Initialize chromosome and band data
         open_mode = "rb" if bam_path.endswith(".bam") else "rc"
         with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
@@ -487,7 +493,7 @@ def parallel_filter_telomere_reads(
             print("---")
             # First process all mapped regions
             regions = [(ref, 1, length) for ref, length in zip(references, lengths)]
-            with ProcessPoolExecutor(max_workers=num_processes) as executor:
+            with ProcessPoolExecutor(max_workers=num_workers) as executor:
                 futures = []
                 print(f"Processing {len(regions)} regions")
                 for region_info in regions:
