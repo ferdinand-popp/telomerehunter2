@@ -1,5 +1,11 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.3 (2025-10-13)
+
+### Highlights
+- Added chromium to docker and apptainer files for kaleido to generate pdfs + test case
+- enhance parallel processing by dynamically adjusting core usage and adding warnings for exceeding available cores
+
 ## v1.0.2 (2025-10-10)
 
 ### Highlights
