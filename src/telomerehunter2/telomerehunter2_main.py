@@ -233,12 +233,13 @@ def parse_command_line_arguments():
     )
     threshold_filtering_group.add_argument(
         "-rt",
-        "--repeatThreshold",
+        "--repeatThresholdRelative",
         type=int,
         default=6,
         dest="repeat_threshold_set",
         help="The number of repeats needed for a read to be classified as telomeric and will be used as x per 100bp \
-            input.  Minimum should be 4 and default is 6 repeats per 100 bp. Can be overwritten by fixed thresholds.",
+            input. Default is 6 repeats per 100 bp. Absolute repeats per read needed is minimum 4 after calculation. \
+            Can be overwritten by --fixedRepeatThresholds.",
     )
     threshold_filtering_group.add_argument(
         "-frt",
