@@ -243,7 +243,7 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
 
         # Save the plot
         os.makedirs(os.path.join(outdir, "html_reports"), exist_ok=True)
-        html_path = os.path.join(outdir, "html_reports", f"{sample_name}_histogram.html")
+        html_path = os.path.join(outdir, "html_reports", f"{sample_name}_read_length_histogram.html")
         fig.write_html(html_path)
         del fig
         print(f"Histogram plot written to {html_path}")
