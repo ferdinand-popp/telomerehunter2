@@ -83,7 +83,7 @@ def create_fast_mode_sample_summary(args, sample_out_dir, bam_path, sample_name,
     summary = {
         "PID": args.pid,
         "sample": sample_name,
-        "Tel_reads_per_million_reads": f"{TRPM:.6f}",
+        "tel_reads_per_million_reads": f"{TRPM:.6f}",
         "total_reads": total_count,
         "read_lengths": read_lengths_str,
         "repeat_threshold_set": trpm_threshold,
@@ -93,7 +93,7 @@ def create_fast_mode_sample_summary(args, sample_out_dir, bam_path, sample_name,
     }
 
     summary_path = os.path.join(sample_out_dir, f"{args.pid}_{sample_name}_summary.tsv")
-    header = ["PID", "sample", "tel_content", "total_reads", "read_lengths", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "unmapped_reads"]
+    header = ["PID", "sample", "tel_reads_per_million_reads", "total_reads", "read_lengths", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "unmapped_reads"]
     with open(summary_path, 'w') as f:
         f.write("\t".join(header) + "\n")
         f.write("\t".join(str(summary[h]) for h in header) + "\n")
