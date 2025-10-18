@@ -27,7 +27,7 @@ import stat
 import sys
 import tempfile
 import time
-import warnings
+import logging
 
 import pandas as pd
 import pysam
@@ -222,7 +222,7 @@ def has_filtering_output(outdir, pid, sample_id):
 
 
 def check_and_prompt_filtering(
-        filter_telomere_reads_flag, tumor_flag, control_flag, outdir, pid
+        filter_telomere_reads_flag, tumor_flag, control_flag, outdir, pid, no_filtering
 ):
     tumor_output_missing = (
         not has_filtering_output(outdir, pid, "tumor") if tumor_flag else False
@@ -232,14 +232,14 @@ def check_and_prompt_filtering(
     )
     if tumor_output_missing and control_output_missing:
         print("Running filtering step as no output files are present")
-        if filter_telomere_reads_flag:
+        if filter_telomere_reads_flag and no_filtering:
             print(
                 "!Denied skipping the filtering with --noFiltering, as no output files were present!"
             )
         filter_T, filter_C = True, True
     elif control_output_missing or tumor_output_missing:
         print("Running filtering step as not all output files are already present")
-        if filter_telomere_reads_flag:
+        if filter_telomere_reads_flag and no_filtering:
             print(
                 "!Denied skipping the filtering with --noFiltering, as not all output files were present!"
             )
@@ -393,7 +393,7 @@ def validate_plotting_options(args):
         import plotly.graph_objects as go
         fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
         img_path = "test_plot.png"
-        warnings.filterwarnings("ignore", message="Resorting to unclean kill browser")
+        logging.getLogger("choreographer.browser_async").setLevel(logging.ERROR)
         fig.write_image(img_path)
         del fig
         if os.path.exists(img_path):
