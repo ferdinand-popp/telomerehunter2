@@ -100,7 +100,6 @@ def estimate_telomere_content(
         sample,
         read_length,
         repeat_threshold_set,
-        per_read_length,
         repeat_threshold_str,
         gc_lower,
         gc_upper,
@@ -149,8 +148,7 @@ def estimate_telomere_content(
     if repeat_threshold_str == "n":
         repeat_threshold_str = "heterogeneous"
 
-    if per_read_length:
-        repeat_threshold_set = str(repeat_threshold_set) + " per 100 bp"
+    repeat_threshold_set = str(repeat_threshold_set) + " per 100 bp"
 
     ##########################
     ### write summary file ###

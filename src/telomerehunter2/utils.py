@@ -27,6 +27,7 @@ import stat
 import sys
 import tempfile
 import time
+import warnings
 
 import pandas as pd
 import pysam
@@ -322,6 +323,22 @@ def validate_args(args):
                 "argument -rc/--repeatsContext should only contain the letters ACGT."
             )
 
+    # check if repeat threshold is min 4 else print warning
+    if args.repeat_threshold_set and args.repeat_threshold_set < 4:
+        print("!! Warning: Repeat thresholds should be at least 4.")
+
+    # check that str input from fixedrepeatthreshold is either int or two ints separated by comma
+    if args.fixed_repeat_thresholds:
+        try:
+            thresholds = list(map(int, args.fixed_repeat_thresholds.split(',')))
+            if len(thresholds) not in [1, 2]:
+                raise ValueError(
+                    "Invalid number of thresholds provided. Use one value or two values separated by a comma.")
+            if any(threshold < 4 for threshold in thresholds):
+                print("!! Warning: Repeat thresholds should be at least 4.")
+        except ValueError as e:
+            raise ValueError(f"Invalid input for --fixedRepeatThresholds: {e}")
+
     # check if bp for sequencing context is divisible by 6 or base telomere sequence given
     if args.bp_context % len(args.repeats[0]) != 0:
         raise ValueError(
@@ -376,7 +393,9 @@ def validate_plotting_options(args):
         import plotly.graph_objects as go
         fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
         img_path = "test_plot.png"
+        warnings.filterwarnings("ignore", message="Resorting to unclean kill browser")
         fig.write_image(img_path)
+        del fig
         if os.path.exists(img_path):
             os.remove(img_path)
     except ImportError:
@@ -528,89 +547,3 @@ def print_copyright_message():
     print("\n")
     print(f"TelomereHunter2 {version}")
     print("\n")
-
-
-def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
-    """Calculate read lengths and repeat thresholds for tumor and control samples."""
-    # Initialize all return variables
-    read_lengths_str_control = None
-    read_lengths_str_tumor = None
-    repeat_thresholds_control = None
-    repeat_thresholds_plot = None
-    repeat_thresholds_str_control = None
-    repeat_thresholds_str_tumor = None
-    repeat_thresholds_tumor = None
-
-    # Set default repeat threshold if not provided
-    if not args.repeat_threshold_set:
-        args.repeat_threshold_set = 6
-        args.per_read_length = True
-        print(
-            "Repeat threshold per 100 bp was not set by the user. Setting it to 6 reads per 100 bp read length."
-        )
-
-    if args.per_read_length:
-        # Calculate tumor thresholds if needed
-        if args.tumor_flag:
-            # Get read lengths and calculate thresholds for tumor
-            read_lengths_str_tumor, tumor_read_length_counts = (
-                get_repeat_threshold.get_read_lengths(tumor_bam)
-            )
-            print("Calculating repeat threshold for the tumor sample: ")
-            repeat_thresholds_tumor, repeat_thresholds_str_tumor = (
-                get_repeat_threshold.get_repeat_threshold(
-                    read_lengths_str_tumor,
-                    tumor_read_length_counts,
-                    args.repeat_threshold_set,
-                )
-            )
-
-        # Calculate control thresholds if needed
-        if args.control_flag and control_bam:
-            # Get read lengths and calculate thresholds for control
-            read_lengths_str_control, control_read_length_counts = (
-                get_repeat_threshold.get_read_lengths(control_bam)
-            )
-            print("Calculating repeat threshold for the control sample: ")
-            repeat_thresholds_control, repeat_thresholds_str_control = (
-                get_repeat_threshold.get_repeat_threshold(
-                    read_lengths_str_control,
-                    control_read_length_counts,
-                    args.repeat_threshold_set,
-                )
-            )
-
-        # Determine which threshold to use for plotting
-        if args.tumor_flag and args.control_flag:
-            repeat_thresholds_plot = (
-                repeat_thresholds_tumor
-                if repeat_thresholds_tumor == repeat_thresholds_control
-                else "n"
-            )
-        elif args.tumor_flag:
-            repeat_thresholds_plot = repeat_thresholds_tumor
-        elif args.control_flag:
-            repeat_thresholds_plot = repeat_thresholds_control
-
-    else:
-        # Use fixed threshold for all cases
-        repeat_thresholds_tumor = args.repeat_threshold_set
-        repeat_thresholds_control = args.repeat_threshold_set
-        repeat_thresholds_plot = args.repeat_threshold_set
-        repeat_thresholds_str_tumor = str(args.repeat_threshold_set)
-        repeat_thresholds_str_control = str(args.repeat_threshold_set)
-
-    print(
-        f"Repeat Thresholds: Tumor={repeat_thresholds_tumor}, Control={repeat_thresholds_control}"
-    )
-    print("\n")
-
-    return (
-        read_lengths_str_control,
-        read_lengths_str_tumor,
-        repeat_thresholds_control,
-        repeat_thresholds_plot,
-        repeat_thresholds_str_control,
-        repeat_thresholds_str_tumor,
-        repeat_thresholds_tumor,
-    )

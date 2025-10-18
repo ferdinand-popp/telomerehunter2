@@ -45,7 +45,6 @@ from telomerehunter2.utils import (
     set_execution_flags,
     combine_summary_files,
     print_copyright_message,
-    get_read_lengths_and_repeat_thresholds,
 )
 from telomerehunter2.fast_mode import run_fast_mode
 
@@ -123,7 +122,6 @@ def run_sample(
                 repeat_threshold_str=repeat_threshold_str,
                 pid=args.pid,
                 repeat_threshold_set=args.repeat_threshold_set,
-                per_read_length=args.per_read_length,
                 gc_lower=args.gc_lower,
                 gc_upper=args.gc_upper,
             )
@@ -237,8 +235,21 @@ def parse_command_line_arguments():
         "-rt",
         "--repeatThreshold",
         type=int,
+        default=6,
         dest="repeat_threshold_set",
-        help="The number of repeats needed for a read to be classified as telomeric. Minimum is 4. Values below 4 will be set to 4 automatically.",
+        help="The number of repeats needed for a read to be classified as telomeric and will be used as x per 100bp \
+            input.  Minimum should be 4 and default is 6 repeats per 100 bp. Can be overwritten by fixed thresholds.",
+    )
+    threshold_filtering_group.add_argument(
+        "-frt",
+        "--fixedRepeatThresholds",
+        dest="fixed_repeat_thresholds",
+        type=str,
+        help=(
+            "If read length distribution is known or you want to overwrite the x per 100bp calculation input via --repeatThreshold, "
+            "use fixed thresholds for tumor and control samples. Input can be e.g. '6' (set for both samples) "
+            "or '6,5' (for tumor and control respectively)."
+        ),
     )
     threshold_filtering_group.add_argument(
         "-mqt",
@@ -277,13 +288,6 @@ def parse_command_line_arguments():
         dest="remove_duplicates",
         action="store_true",
         help="Reads marked as duplicates in the input bam file(s) are removed in the filtering step.",
-    )
-    threshold_filtering_group.add_argument(
-        "-rl",
-        "--perReadLength",
-        dest="per_read_length",
-        action="store_true",
-        help="Repeat threshold is set per 100 bp read length.",
     )
     threshold_filtering_group.add_argument(
         "--min-reads-per-barcode",
@@ -466,13 +470,6 @@ def parse_command_line_arguments():
     # Set execution flags
     set_execution_flags(args)
 
-    # Input validation for repeat_threshold_set
-    if args.repeat_threshold_set is not None and args.repeat_threshold_set < 4:
-        print(
-            "Warning: repeatThreshold was set below 4. Setting to minimum value of 4."
-        )
-        args.repeat_threshold_set = 4
-
     return args
 
 
@@ -505,7 +502,8 @@ def run_telomerehunter(
         region_cores = args.cores if args.cores is not None else available_cores
     # Warn if region_cores exceeds available_cores
     if region_cores > available_cores:
-        print(f"Warning: Requested region cores ({region_cores}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
+        print(
+            f"Warning: Requested region cores ({region_cores}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
         region_cores = available_cores
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
 
@@ -590,8 +588,8 @@ def summary_log2(main_path, pid):
     log2_cols = [
         col for col in summary.columns
         if col == "tel_content"
-        or "_arbitrary_context_norm_by_intratel_reads" in col
-        or "_singletons_norm_by_all_reads" in col
+           or "_arbitrary_context_norm_by_intratel_reads" in col
+           or "_singletons_norm_by_all_reads" in col
     ]
 
     # Indices for log2 columns
@@ -785,7 +783,7 @@ def main():
         repeat_thresholds_str_control,
         repeat_thresholds_str_tumor,
         repeat_thresholds_tumor,
-    ) = get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam)
+    ) = get_repeat_threshold.get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam)
 
     ###############################
     ## run tumor sample for PID ###

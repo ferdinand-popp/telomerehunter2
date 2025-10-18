@@ -1,8 +1,7 @@
 import os
 import pandas as pd
 import pysam
-from telomerehunter2 import filter_telomere_reads
-from telomerehunter2.utils import get_read_lengths_and_repeat_thresholds
+from telomerehunter2 import filter_telomere_reads, get_repeat_threshold
 
 def run_fast_mode(args):
     out_dir = os.path.join(args.parent_outdir, args.pid)
@@ -34,7 +33,7 @@ def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file):
         total_count = bam_file.count(until_eof=True)
     print(f"Total number of reads in input: {total_count}")
 
-    (_, read_lengths, _, _, _, _, repeat_threshold) = get_read_lengths_and_repeat_thresholds(args, None, bam_path)
+    (_, read_lengths, _, _, _, _, repeat_threshold) = get_repeat_threshold.get_read_lengths_and_repeat_thresholds(args, None, bam_path)
 
     filter_telomere_reads.parallel_filter_telomere_reads(
         bam_path=temp_unmapped_bam,
