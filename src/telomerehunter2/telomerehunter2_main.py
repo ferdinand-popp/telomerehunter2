@@ -769,6 +769,7 @@ def main():
         args.control_flag,
         args.outdir,
         args.pid,
+        args.noFiltering,
     )
 
     ###############################################
