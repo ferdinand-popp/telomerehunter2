@@ -171,8 +171,13 @@ def process_region(args):
     filtered_read_count = 0
 
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-    with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
-        with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
+    with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
+        # Build header: all @SQ lines, remove RG/PG/CO
+        header = bamfile.header.to_dict()
+        for tag in ["RG", "PG", "CO"]:
+            if tag in header:
+                del header[tag]
+        with pysam.AlignmentFile(temp_bam, mode="wb", header=header) as filtered_file:
             try:
                 barcode_counts = defaultdict(int) if singlecell_mode else None
                 for read in bamfile.fetch(contig=chrom, start=start - 1, end=end):
@@ -312,8 +317,13 @@ def process_unmapped_reads(args):
     total_reads_processed = 0
 
     open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-    with pysam.AlignmentFile(bam_path, open_mode) as bamfile:
-        with pysam.AlignmentFile(temp_bam, "wb", template=bamfile) as filtered_file:
+    with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
+        # Build minimal header: all @SQ, remove RG/PG/CO
+        header = bamfile.header.to_dict()
+        for tag in ["RG", "PG", "CO"]:
+            if tag in header:
+                del header[tag]
+        with pysam.AlignmentFile(temp_bam, mode="wb", header=header) as filtered_file:
             try:
                 # Bam uses seek, Cram needs last reference
                 if open_mode == "rb":
@@ -603,7 +613,7 @@ def parallel_filter_telomere_reads(
                 shutil.copy(temp_bams[0], output_bam)
             else:
                 # Merge BAMs
-                pysam.merge("-f", output_bam, *temp_bams)
+                pysam.merge("-f", "-h", bam_path, output_bam, *temp_bams)
 
             # Sort by name and index the filtered file
             pysam.index(output_bam)
