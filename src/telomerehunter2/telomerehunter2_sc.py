@@ -256,8 +256,6 @@ def main():
 
     # Ensure single-cell mode and disable plotting
     cli_args = list(sys.argv[1:])
-    if '--plotNone' not in cli_args:
-        cli_args.append('--plotNone')
     if '--singlecell_mode' not in cli_args:
         cli_args.append('--singlecell_mode')
 
