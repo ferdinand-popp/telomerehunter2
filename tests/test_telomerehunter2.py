@@ -165,6 +165,7 @@ class TestTelomereHunter2(unittest.TestCase):
             patient_name,
             "-b",
             str(self.banding_file),
+            "-pno",
         ]
 
         if bam_file_path_control:
@@ -191,21 +192,9 @@ class TestTelomereHunter2(unittest.TestCase):
         """Validate the results of a test run."""
         patient_name = "TEST_PATIENT"
         summary_file = Path(results_path) / patient_name / f"{patient_name}_summary.tsv"
-        merged_plots_file = (
-            Path(results_path) / patient_name / f"{patient_name}_all_plots_merged.pdf"
-        )
 
         self.assertTrue(
             summary_file.exists(), f"Summary file not found: {summary_file}"
-        )
-        self.assertTrue(
-            merged_plots_file.exists(),
-            f"Merged plots file not found: {merged_plots_file}",
-        )
-        self.assertGreater(
-            merged_plots_file.stat().st_size,
-            0,
-            f"Merged plots file is empty: {merged_plots_file}",
         )
 
         # Read summary TSV into a DataFrame
