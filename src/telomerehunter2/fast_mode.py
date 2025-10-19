@@ -167,7 +167,17 @@ def create_fast_mode_sample_summary(
 
 
 def write_fast_mode_combined_summary(args, out_dir, tumor_summary, control_summary):
-    header = ["PID", "sample", "tel_content", "total_reads", "read_lengths", "repeat_threshold_set", "repeat_threshold_used", "tel_read_count", "unmapped_reads"]
+    header = [
+        "PID",
+        "sample",
+        "tel_reads_per_million_reads",
+        "total_reads",
+        "read_lengths",
+        "repeat_threshold_set",
+        "repeat_threshold_used",
+        "tel_read_count",
+        "unmapped_reads",
+    ]
     rows = []
 
     def map_row(summary):
