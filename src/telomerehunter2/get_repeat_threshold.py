@@ -314,30 +314,33 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
             if repeat_thresholds_tumor == repeat_thresholds_control
             else "n"
         )
-        _write_readlength_diagnostics(
-            'tumor',
-            tumor_read_length_counts,
-            args.outdir,
-            threshold_selected=repeat_thresholds_tumor,
-            control_read_length_counts=control_read_length_counts,
-            threshold_selected_control=repeat_thresholds_control,
-        )
+        if not getattr(args, "plotNone", False):
+            _write_readlength_diagnostics(
+                "tumor",
+                tumor_read_length_counts,
+                args.outdir,
+                threshold_selected=repeat_thresholds_tumor,
+                control_read_length_counts=control_read_length_counts,
+                threshold_selected_control=repeat_thresholds_control,
+            )
     elif args.tumor_flag:
         repeat_thresholds_plot = repeat_thresholds_tumor
-        _write_readlength_diagnostics(
-            'tumor',
-            tumor_read_length_counts,
-            args.outdir,
-            threshold_selected=repeat_thresholds_tumor,
-        )
+        if not getattr(args, "plotNone", False):
+            _write_readlength_diagnostics(
+                "tumor",
+                tumor_read_length_counts,
+                args.outdir,
+                threshold_selected=repeat_thresholds_tumor,
+            )
     elif args.control_flag:
         repeat_thresholds_plot = repeat_thresholds_control
-        _write_readlength_diagnostics(
-            'control',
-            control_read_length_counts,
-            args.outdir,
-            threshold_selected=repeat_thresholds_control,
-        )
+        if not getattr(args, "plotNone", False):
+            _write_readlength_diagnostics(
+                "control",
+                control_read_length_counts,
+                args.outdir,
+                threshold_selected=repeat_thresholds_control,
+            )
 
     print(
         f"Repeat Thresholds: Tumor={repeat_thresholds_tumor}, Control={repeat_thresholds_control}"

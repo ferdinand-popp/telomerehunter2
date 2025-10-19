@@ -390,30 +390,33 @@ def validate_plotting_options(args):
     if args.plotFileFormat == ["all"] or args.plotFileFormat == "all":
         args.plotFileFormat = ["pdf", "png", "svg", "html"]
 
-    # Kaleido check static export
-    static_export_failed = False
-    try:
-        import plotly.graph_objects as go
-        fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
-        img_path = "test_plot.png"
-        logging.getLogger("choreographer.browser_async").setLevel(logging.ERROR)
-        fig.write_image(img_path)
-        del fig
-        if os.path.exists(img_path):
-            os.remove(img_path)
-    except ImportError:
-        print("Warning: Plotly is not installed. Removing plotting with --plotNone.")
-        args.plotNone = True
-        static_export_failed = True
-    except Exception as e:
-        print(
-            "Warning: Kaleido package or Chromium is not installed or an error occurred. "
-            "Removing all formats except HTML from --plotFileFormat."
-        )
-        static_export_failed = True
-    if static_export_failed:
-        args.plotFileFormat = ["html"]
-    # else: keep all user-specified formats
+    if not args.plotNone and any(fmt != "html" for fmt in args.plotFileFormat):
+        # Kaleido check static export
+        static_export_failed = False
+        try:
+            import plotly.graph_objects as go
+
+            fig = go.Figure(data=go.Bar(y=[2, 3, 1]))
+            img_path = "test_plot.png"
+            logging.getLogger("choreographer.browser_async").setLevel(logging.ERROR)
+            fig.write_image(img_path)
+            del fig
+            if os.path.exists(img_path):
+                os.remove(img_path)
+        except ImportError:
+            print(
+                "Warning: Plotly is not installed. Removing plotting with --plotNone."
+            )
+            args.plotNone = True
+            static_export_failed = True
+        except Exception as e:
+            print(
+                "Warning: Kaleido package or Chromium is not installed or an error occurred. "
+                f"Removing all formats except HTML from --plotFileFormat. Details: {e}"
+            )
+            static_export_failed = True
+        if static_export_failed:
+            args.plotFileFormat = ["html"]
 
     # if no plotting options are selected: plot all diagrams.
     if (
