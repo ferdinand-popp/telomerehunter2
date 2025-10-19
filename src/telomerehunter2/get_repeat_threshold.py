@@ -165,7 +165,7 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
             )
             data.append(go.Histogram(
                 x=control_lengths,
-                name="Control",
+                name="control",
                 opacity=0.65,
                 marker_color='red',
             ))
@@ -209,13 +209,13 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
                 xref="x",
                 yref="paper",
                 line=dict(color="red", dash="dash"),
-                name='Control Average'
+                name='control Average'
             )
 
         # Update layout
         fig.update_layout(
             barmode='overlay',
-            title=f"Read Length Distribution for {sample_name}{' & Control' if control_read_length_counts else ''}",
+            title=f"Read Length Distribution for {sample_name}{' & control' if control_read_length_counts else ''}",
             xaxis_title="Read Length",
             yaxis_title="Count",
             legend_title="Legend"
@@ -231,7 +231,7 @@ def get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam):
         elif threshold_selected is not None:
             subtitle = f"Threshold selected: {sample_name}: {threshold_selected} repeats/read"
         elif threshold_selected_control is not None:
-            subtitle = f"Threshold selected: Control: {threshold_selected_control} repeats/read"
+            subtitle = f"Threshold selected: control: {threshold_selected_control} repeats/read"
 
         if subtitle:
             fig.update_layout(
