@@ -203,6 +203,7 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 - [Wiki](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
 - [Example Data](tests/)
 - [Tutorial Videos](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
+- [Telomerehunter Website](https://www.dkfz.de/angewandte-bioinformatik/telomerehunter)
 - [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
 
 ## Citation

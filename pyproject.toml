@@ -44,7 +44,7 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://www.dkfz.de/en/applied-bioinformatics/telomerehunter/telomerehunter.html"
+homepage = "https://www.dkfz.de/angewandte-bioinformatik/telomerehunter"
 repository = "https://github.com/ferdinand-popp/telomerehunter2"
 documentation = "https://github.com/ferdinand-popp/telomerehunter2#readme"
 
