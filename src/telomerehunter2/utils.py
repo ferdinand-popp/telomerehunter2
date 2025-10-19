@@ -19,6 +19,7 @@
 
 import cProfile
 import io
+import logging
 import os
 import pstats
 import re
@@ -27,13 +28,9 @@ import stat
 import sys
 import tempfile
 import time
-import logging
 
 import pandas as pd
 import pysam
-import plotly.graph_objects as go
-
-from telomerehunter2 import get_repeat_threshold
 
 
 def measure_time(func):
