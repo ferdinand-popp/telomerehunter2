@@ -178,7 +178,7 @@ def update_summary_table(main_path, pid, TVRs_for_summary, table_merged):
 
     for sample in ["tumor", "control"]:
         pattern_col = (
-            f'Count_norm_by_intratel_reads_{"T" if sample == "tumor" else "C"}'
+            f"Count_norm_by_intratel_reads_{'T' if sample == 'tumor' else 'C'}"
         )
         pattern_indexed = table_merged.set_index("Pattern")[pattern_col]
 

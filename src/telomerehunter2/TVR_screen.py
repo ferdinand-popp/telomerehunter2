@@ -22,7 +22,7 @@ import re
 
 import pysam
 
-from telomerehunter2.utils import (assure_dir_exists, get_reverse_complement)
+from telomerehunter2.utils import assure_dir_exists, get_reverse_complement
 
 ##################################################################################################################################################################
 ### script loops through filtered BAM file containing intratelomeric reads and searches for patterns of the type XXXGGG (and reverse complement)               ###
@@ -88,9 +88,7 @@ def screen_bam_file(
     """Screen BAM file for patterns and update counts and qualities."""
 
     patterns = {}  # dict for counting of patterns
-    qualities = (
-        {}
-    )  # dict: patterns are keys, for each pattern 3 lists containing qualities at position 1, 2 and 3
+    qualities = {}  # dict: patterns are keys, for each pattern 3 lists containing qualities at position 1, 2 and 3
 
     bamfile = pysam.AlignmentFile(bam_file, "rb")
 

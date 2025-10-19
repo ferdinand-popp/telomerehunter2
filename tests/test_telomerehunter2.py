@@ -1,10 +1,10 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-import sys
 
 import pandas as pd
 import pysam
@@ -151,7 +151,9 @@ class TestTelomereHunter2(unittest.TestCase):
         self, bam_file_path, results_path, patient_name, bam_file_path_control=None
     ):
         """Run the telomerehunter2 source script via command-line interface."""
-        script_path = self.project_root / "src" / "telomerehunter2" / "telomerehunter2_main.py"
+        script_path = (
+            self.project_root / "src" / "telomerehunter2" / "telomerehunter2_main.py"
+        )
         command = [
             sys.executable,
             str(script_path),

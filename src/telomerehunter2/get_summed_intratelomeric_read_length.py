@@ -21,11 +21,11 @@ import os
 
 import pysam
 
-
 #########################################################################
 ### gives the sum of all intratelomeric read lengths (base pairs)     ###
 ### secondary and supplementary alignments are skipped                ###
 #########################################################################
+
 
 def summed_intratelomeric_read_length(main_path, pid, sample):
     """

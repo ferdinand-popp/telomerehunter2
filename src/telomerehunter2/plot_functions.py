@@ -26,10 +26,10 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
 
+from telomerehunter2.utils import get_band_info, get_reverse_complement
+
 os.environ["KALIEDO_EXE_OPTIONS"] = "--no-sandbox"
 pio.kaleido.scope.mathjax = None
-
-from telomerehunter2.utils import get_band_info, get_reverse_complement
 
 TVR_COLORS = {
     "TTAGGG": "#CB181D",
@@ -83,7 +83,6 @@ def save_plot(
                 )
             except Exception as e:
                 print(f"Error saving plot in {fmt} format: {str(e)}")
-
 
 
 def validate_data(df, required_columns):
@@ -649,7 +648,7 @@ def plot_spectrum_summary(
     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[1]))
     fig.update_layout(
         legend=dict(
-            title=f'{repeat_threshold_plot} {"Consecutive" if consecutive else "Non-consecutive"} Repeats<br>Mapq Threshold = {mapq_threshold}',
+            title=f"{repeat_threshold_plot} {'Consecutive' if consecutive else 'Non-consecutive'} Repeats<br>Mapq Threshold = {mapq_threshold}",
             bgcolor="rgba(255,255,255,0.5)",
             bordercolor="rgba(0,0,0,0.5)",
             borderwidth=1,
@@ -757,7 +756,7 @@ def plot_tel_content(
 
     fig.update_layout(
         legend=dict(
-            title=f'{repeat_threshold_plot} {"Consecutive" if consecutive else "Non-consecutive"} Repeats <br>Mapq Threshold = {mapq_threshold}',
+            title=f"{repeat_threshold_plot} {'Consecutive' if consecutive else 'Non-consecutive'} Repeats <br>Mapq Threshold = {mapq_threshold}",
             bgcolor="rgba(255,255,255,0.5)",
             bordercolor="rgba(0,0,0,0.5)",
             borderwidth=1,
@@ -1267,7 +1266,6 @@ def plot_TVR_plot(outdir, pid, plot_file_format):
             table_for_scatter.loc["TTAGGG", "Count_norm_by_intratel_reads_C"]
         )
     ):
-
         # Reset index for easier use with plotly
         table_for_scatter = table_for_scatter.reset_index()
 

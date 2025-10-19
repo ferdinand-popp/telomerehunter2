@@ -24,7 +24,6 @@ import pysam
 
 from telomerehunter2.utils import get_reverse_complement
 
-
 ###############################################################################################
 ### get the distribution of telomeric repeats per intratelomeric read in the input BAM file ###
 ###############################################################################################

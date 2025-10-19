@@ -93,7 +93,6 @@ def tvr_context(
     neighborhood = {}
 
     for read in bamfile.fetch(until_eof=True):
-
         seq = read.query_sequence
         qual = read.query_qualities
 
@@ -108,7 +107,6 @@ def tvr_context(
         indices_pattern = [m.start() for m in re.finditer(rf"(?={pattern})", seq)]
 
         for i in indices_pattern:
-
             bases_before = ""
             bases_after = ""
 

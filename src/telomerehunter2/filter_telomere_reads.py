@@ -28,7 +28,7 @@ from concurrent.futures.process import BrokenProcessPool
 
 import pysam
 
-from telomerehunter2.utils import (get_band_info, get_reverse_complement)
+from telomerehunter2.utils import get_band_info, get_reverse_complement
 
 
 def compile_patterns(repeats):
@@ -40,11 +40,11 @@ def compile_patterns(repeats):
 
 
 def is_telomere_read(
-        consecutive_flag,
-        patterns_regex_forward,
-        patterns_regex_reverse,
-        sequence,
-        repeat_threshold_calc,
+    consecutive_flag,
+    patterns_regex_forward,
+    patterns_regex_reverse,
+    sequence,
+    repeat_threshold_calc,
 ):
     # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
@@ -57,8 +57,8 @@ def is_telomere_read(
     else:
         # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
 
 
@@ -102,7 +102,9 @@ def initialize_chromosome_and_band_data(bamfile, band_file):
     }
 
 
-def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info, barcode_counts=None):
+def write_output(
+    out_dir, pid, sample, gc_content_list, read_counts, band_info, barcode_counts=None
+):
     # Write read counts
     readcount_file_path = os.path.join(out_dir, f"{pid}_readcount.tsv")
     with open(readcount_file_path, "w") as readcount_file:
@@ -132,7 +134,9 @@ def write_output(out_dir, pid, sample, gc_content_list, read_counts, band_info, 
 
     # Write barcode counts if present
     if barcode_counts is not None:
-        barcode_file_path = os.path.join(os.path.dirname(out_dir), f"{pid}_barcode_counts.tsv")
+        barcode_file_path = os.path.join(
+            os.path.dirname(out_dir), f"{pid}_barcode_counts.tsv"
+        )
         print(f"Writing barcode table to: {barcode_file_path}")
         complete_entries = sum(1 for bc in barcode_counts if bc)
         print(f"Number of complete barcode entries: {complete_entries}")
@@ -189,9 +193,9 @@ def process_region(args):
                         is_unmapped = read.is_unmapped
                         mapping_quality = read.mapping_quality
                         if (
-                                read.is_secondary
-                                or read.is_supplementary
-                                or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                         ):
                             continue
 
@@ -200,7 +204,7 @@ def process_region(args):
                         try:
                             read_length = len(sequence)
                         except (
-                                TypeError
+                            TypeError
                         ):  # skip if there is no sequence for read in BAM file
                             continue
 
@@ -262,11 +266,11 @@ def process_region(args):
 
                         # Check if it's a telomere read
                         if is_telomere_read(
-                                consecutive_flag,
-                                patterns_regex_forward,
-                                patterns_regex_reverse,
-                                sequence,
-                                repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                         ):
                             filtered_file.write(read)
                             filtered_read_count += 1
@@ -306,7 +310,6 @@ def process_unmapped_reads(args):
         singlecell_mode,  # Add singlecell_mode to args
     ) = args
 
-
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
 
@@ -340,9 +343,9 @@ def process_unmapped_reads(args):
                         if not read.is_unmapped:
                             continue
                         if (
-                                read.is_secondary
-                                or read.is_supplementary
-                                or (remove_duplicates and read.is_duplicate)
+                            read.is_secondary
+                            or read.is_supplementary
+                            or (remove_duplicates and read.is_duplicate)
                         ):
                             continue
 
@@ -374,11 +377,11 @@ def process_unmapped_reads(args):
 
                         # Check if it's a telomere read
                         if is_telomere_read(
-                                consecutive_flag,
-                                patterns_regex_forward,
-                                patterns_regex_reverse,
-                                sequence,
-                                repeat_threshold_calc,
+                            consecutive_flag,
+                            patterns_regex_forward,
+                            patterns_regex_reverse,
+                            sequence,
+                            repeat_threshold_calc,
                         ):
                             filtered_file.write(read)
                             filtered_read_count += 1
@@ -394,7 +397,8 @@ def process_unmapped_reads(args):
 
     if total_reads_processed == 0:
         print(
-            "!!! Warning: No unmapped reads found. Please check the input BAM/CRAM file for completeness. !!!")
+            "!!! Warning: No unmapped reads found. Please check the input BAM/CRAM file for completeness. !!!"
+        )
     else:
         print(f"Total unmapped reads processed: {total_reads_processed}")
         print(f"Total telomeric reads found in unmapped reads: {filtered_read_count}")
@@ -410,19 +414,19 @@ def process_unmapped_reads(args):
 
 
 def parallel_filter_telomere_reads(
-        bam_path,
-        out_dir,
-        pid,
-        sample,
-        repeat_threshold_calc,
-        mapq_threshold,
-        repeats,
-        consecutive_flag,
-        remove_duplicates,
-        band_file=None,
-        num_processes=None,
-        singlecell_mode=None,
-        fast_mode=False,
+    bam_path,
+    out_dir,
+    pid,
+    sample,
+    repeat_threshold_calc,
+    mapq_threshold,
+    repeats,
+    consecutive_flag,
+    remove_duplicates,
+    band_file=None,
+    num_processes=None,
+    singlecell_mode=None,
+    fast_mode=False,
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
@@ -436,7 +440,9 @@ def parallel_filter_telomere_reads(
     else:
         num_workers = min(num_processes, available_cores)
     if num_workers > available_cores:
-        print(f"Warning: Requested region cores ({num_workers}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
+        print(
+            f"Warning: Requested region cores ({num_workers}) exceed available cores ({available_cores}). Limiting to {available_cores}."
+        )
         num_workers = available_cores
     # Create a temporary directory within the output directory
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
@@ -468,7 +474,9 @@ def parallel_filter_telomere_reads(
         # FAST MODE: Only process unmapped reads, skip region-based processing
         if fast_mode:
             print("---")
-            print("Fast mode: Skipping region-based processing, only processing unmapped reads.")
+            print(
+                "Fast mode: Skipping region-based processing, only processing unmapped reads."
+            )
             unmapped_args = (
                 bam_path,
                 patterns_regex_forward,
@@ -487,14 +495,20 @@ def parallel_filter_telomere_reads(
                     if unmapped_result is not None:
                         results.append(unmapped_result)
                         total_filtered_reads += unmapped_result["filtered_read_count"]
-                        for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        for bc, count in unmapped_result.get(
+                            "barcode_counts", {}
+                        ).items():
                             barcode_counts_merged[bc] += count
                         print(
                             f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                         )
                 except BrokenProcessPool as bpe:
-                    print("ERROR: BrokenProcessPool encountered during unmapped region processing.")
-                    print("This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_unmapped_reads.")
+                    print(
+                        "ERROR: BrokenProcessPool encountered during unmapped region processing."
+                    )
+                    print(
+                        "This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_unmapped_reads."
+                    )
                     print(f"Details: {bpe}")
                     raise
             except Exception as e:
@@ -528,9 +542,13 @@ def parallel_filter_telomere_reads(
                             # Collect results and track the maximum file position
                             if result is not None:
                                 results.append(result)
-                                max_position = max(max_position, result.get("last_position", 0))
+                                max_position = max(
+                                    max_position, result.get("last_position", 0)
+                                )
                                 total_filtered_reads += result["filtered_read_count"]
-                                for bc, count in result.get("barcode_counts", {}).items():
+                                for bc, count in result.get(
+                                    "barcode_counts", {}
+                                ).items():
                                     barcode_counts_merged[bc] += count
                                 print(
                                     f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
@@ -538,11 +556,17 @@ def parallel_filter_telomere_reads(
                         except Exception as e:
                             print(f"Error in region processing: {e}")
                 except BrokenProcessPool as bpe:
-                    print("ERROR: BrokenProcessPool encountered. One of the subprocesses crashed.")
-                    print("This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_region.")
+                    print(
+                        "ERROR: BrokenProcessPool encountered. One of the subprocesses crashed."
+                    )
+                    print(
+                        "This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_region."
+                    )
                     print(f"Details: {bpe}")
                     # Optionally, print which regions were completed
-                    completed_regions = [r.get("region") for r in results if "region" in r]
+                    completed_regions = [
+                        r.get("region") for r in results if "region" in r
+                    ]
                     print(f"Regions completed before crash: {completed_regions}")
                     # Optionally, re-raise or exit
                     raise
@@ -569,14 +593,20 @@ def parallel_filter_telomere_reads(
                     if unmapped_result is not None:
                         results.append(unmapped_result)
                         total_filtered_reads += unmapped_result["filtered_read_count"]
-                        for bc, count in unmapped_result.get("barcode_counts", {}).items():
+                        for bc, count in unmapped_result.get(
+                            "barcode_counts", {}
+                        ).items():
                             barcode_counts_merged[bc] += count
                         print(
                             f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                         )
                 except BrokenProcessPool as bpe:
-                    print("ERROR: BrokenProcessPool encountered during unmapped region processing.")
-                    print("This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_unmapped_reads.")
+                    print(
+                        "ERROR: BrokenProcessPool encountered during unmapped region processing."
+                    )
+                    print(
+                        "This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_unmapped_reads."
+                    )
                     print(f"Details: {bpe}")
                     raise
             except Exception as e:
@@ -605,7 +635,7 @@ def parallel_filter_telomere_reads(
             result["temp_bam"]
             for result in results
             if os.path.exists(result["temp_bam"])
-               and os.path.getsize(result["temp_bam"]) > 0
+            and os.path.getsize(result["temp_bam"]) > 0
         ]
 
         if temp_bams:
@@ -633,9 +663,14 @@ def parallel_filter_telomere_reads(
         else:
             print("Warning: No reads passed filtering criteria")
 
-        if singlecell_mode and isinstance(barcode_counts_merged, dict) and not barcode_counts_merged:
+        if (
+            singlecell_mode
+            and isinstance(barcode_counts_merged, dict)
+            and not barcode_counts_merged
+        ):
             print(
-                "Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data.")
+                "Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data."
+            )
 
         # Write results to files
         write_output(

@@ -1,6 +1,7 @@
 import os
-import unittest
 import tempfile
+import unittest
+
 import plotly.express as px
 
 

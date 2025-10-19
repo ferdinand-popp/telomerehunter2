@@ -25,41 +25,47 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import pandas as pd
-import pysam
 
-from telomerehunter2 import (TVR_context, TVR_context_summary_tables,
-                             TVR_screen, estimate_telomere_content,
-                             filter_telomere_reads, get_repeat_threshold,
-                             get_summed_intratelomeric_read_length, merge_pdfs,
-                             normalize_TVR_counts, plot_functions,
-                             repeat_frequency_intratelomeric,
-                             sort_telomere_reads)
-from telomerehunter2.utils import (
-    file_exists,
-    check_and_create_index,
-    delete_temp_dir,
-    check_and_prompt_filtering,
-    get_repeat_threshold_from_summary,
-    validate_args,
-    validate_plotting_options,
-    set_execution_flags,
-    combine_summary_files,
-    print_copyright_message,
+from telomerehunter2 import (
+    TVR_context,
+    TVR_context_summary_tables,
+    TVR_screen,
+    estimate_telomere_content,
+    filter_telomere_reads,
+    get_repeat_threshold,
+    get_summed_intratelomeric_read_length,
+    merge_pdfs,
+    normalize_TVR_counts,
+    plot_functions,
+    repeat_frequency_intratelomeric,
+    sort_telomere_reads,
 )
 from telomerehunter2.fast_mode import run_fast_mode
+from telomerehunter2.utils import (
+    check_and_create_index,
+    check_and_prompt_filtering,
+    combine_summary_files,
+    delete_temp_dir,
+    file_exists,
+    get_repeat_threshold_from_summary,
+    print_copyright_message,
+    set_execution_flags,
+    validate_args,
+    validate_plotting_options,
+)
 
 
 def run_sample(
-        sample_name,
-        sample_bam,
-        outdir_sample,
-        sample_id,
-        read_length,
-        repeat_threshold_calc,
-        repeat_threshold_str,
-        filter_telomere_reads_flag,
-        region_cores,
-        args,
+    sample_name,
+    sample_bam,
+    outdir_sample,
+    sample_id,
+    read_length,
+    repeat_threshold_calc,
+    repeat_threshold_str,
+    filter_telomere_reads_flag,
+    region_cores,
+    args,
 ):
     try:
         if getattr(args, "singlecell_mode", False):
@@ -102,7 +108,9 @@ def run_sample(
             )
 
         if args.estimate_telomere_content_flag:
-            print("------ " + sample_name + ": started estimating telomere content ------")
+            print(
+                "------ " + sample_name + ": started estimating telomere content ------"
+            )
 
             estimate_telomere_content.get_gc_content_distribution(
                 bam_file=os.path.join(
@@ -165,6 +173,7 @@ def run_sample(
     except Exception as e:
         print(f"[ERROR] Exception in run_sample for {sample_name}: {e}")
         import traceback
+
         traceback.print_exc()
         return {"status": "error", "error": str(e)}
 
@@ -306,8 +315,8 @@ def parse_command_line_arguments():
         dest="repeats",
         type=str,
         help="Base sequences to inspect like TTAGGG and its TVRs. First sequence is /"
-             "used as base telomeric sequence. Default: ['TTAGGG', 'TGAGGG', 'TCAGGG', /"
-             "'TTCGGG', 'TTGGGG'].",
+        "used as base telomeric sequence. Default: ['TTAGGG', 'TGAGGG', 'TCAGGG', /"
+        "'TTCGGG', 'TTGGGG'].",
         default=["TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"],
     )
     repeats_context_group.add_argument(
@@ -475,17 +484,17 @@ def parse_command_line_arguments():
 
 
 def run_telomerehunter(
-        args,
-        control_bam,
-        filter_telomere_reads_control,
-        filter_telomere_reads_tumor,
-        read_lengths_control,
-        read_lengths_tumor,
-        repeat_thresholds_control,
-        repeat_thresholds_str_control,
-        repeat_thresholds_str_tumor,
-        repeat_thresholds_tumor,
-        tumor_bam,
+    args,
+    control_bam,
+    filter_telomere_reads_control,
+    filter_telomere_reads_tumor,
+    read_lengths_control,
+    read_lengths_tumor,
+    repeat_thresholds_control,
+    repeat_thresholds_str_control,
+    repeat_thresholds_str_tumor,
+    repeat_thresholds_tumor,
+    tumor_bam,
 ):
     # Determine available CPU cores
     available_cores = multiprocessing.cpu_count()
@@ -504,16 +513,16 @@ def run_telomerehunter(
     # Warn if region_cores exceeds available_cores
     if region_cores > available_cores:
         print(
-            f"Warning: Requested region cores ({region_cores}) exceed available cores ({available_cores}). Limiting to {available_cores}.")
+            f"Warning: Requested region cores ({region_cores}) exceed available cores ({available_cores}). Limiting to {available_cores}."
+        )
         region_cores = available_cores
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-
         submitted_futures = []
         # run tumor sample for PID
         if args.tumor_flag and (
-                filter_telomere_reads_tumor
-                or args.sort_telomere_reads_flag
-                or args.estimate_telomere_content_flag
+            filter_telomere_reads_tumor
+            or args.sort_telomere_reads_flag
+            or args.estimate_telomere_content_flag
         ):
             tumor_sample_id = "tumor"
             tumor_output_dir = os.path.join(
@@ -543,9 +552,9 @@ def run_telomerehunter(
 
         # run control samples for PID
         if args.control_flag and (
-                filter_telomere_reads_control
-                or args.sort_telomere_reads_flag
-                or args.estimate_telomere_content_flag
+            filter_telomere_reads_control
+            or args.sort_telomere_reads_flag
+            or args.estimate_telomere_content_flag
         ):
             control_sample_id = "control"
             control_output_dir = os.path.join(
@@ -587,18 +596,23 @@ def summary_log2(main_path, pid):
 
     # Select columns for log2 calculation
     log2_cols = [
-        col for col in summary.columns
+        col
+        for col in summary.columns
         if col == "tel_content"
-           or "_arbitrary_context_norm_by_intratel_reads" in col
-           or "_singletons_norm_by_all_reads" in col
+        or "_arbitrary_context_norm_by_intratel_reads" in col
+        or "_singletons_norm_by_all_reads" in col
     ]
 
     # Indices for log2 columns
     log2_indices = [summary.columns.get_loc(col) for col in log2_cols]
 
     if "tumor" in samples.values and "control" in samples.values:
-        tumor_row = summary.loc[samples == "tumor"].iloc[:, log2_indices].fillna(0).values
-        control_row = summary.loc[samples == "control"].iloc[:, log2_indices].fillna(0).values
+        tumor_row = (
+            summary.loc[samples == "tumor"].iloc[:, log2_indices].fillna(0).values
+        )
+        control_row = (
+            summary.loc[samples == "control"].iloc[:, log2_indices].fillna(0).values
+        )
 
         log2_values = np.empty_like(tumor_row, dtype=float)
         log2_values.fill(np.nan)
@@ -626,18 +640,18 @@ def prepare_summary_file(main_path, pid):
     summary = pd.read_csv(summary_file, sep="\t", header=0)
 
     # Rename 'read_length' to 'read_lengths'
-    if 'read_length' in summary.columns:
-        summary = summary.rename(columns={'read_length': 'read_lengths'})
+    if "read_length" in summary.columns:
+        summary = summary.rename(columns={"read_length": "read_lengths"})
 
     # Remove 'TRPM' column if present
-    if 'TRPM' in summary.columns:
-        summary = summary.drop(columns=['TRPM'])
+    if "TRPM" in summary.columns:
+        summary = summary.drop(columns=["TRPM"])
 
     # Move 'tel_content' to third column if present
     cols = list(summary.columns)
-    if 'tel_content' in cols:
-        cols.remove('tel_content')
-        cols.insert(2, 'tel_content')
+    if "tel_content" in cols:
+        cols.remove("tel_content")
+        cols.insert(2, "tel_content")
         summary = summary[cols]
 
     summary.to_csv(summary_file, sep="\t", index=False)
@@ -735,7 +749,9 @@ def main():
     # parse and check input parameters
     args = parse_command_line_arguments()
     if getattr(args, "singlecell_mode", False):
-        print("Single-cell mode detected. Running full file analysis and barcode-specific insights.")
+        print(
+            "Single-cell mode detected. Running full file analysis and barcode-specific insights."
+        )
 
     # Fast mode branch
     if getattr(args, "fast_mode", False):
@@ -785,7 +801,9 @@ def main():
         repeat_thresholds_str_control,
         repeat_thresholds_str_tumor,
         repeat_thresholds_tumor,
-    ) = get_repeat_threshold.get_read_lengths_and_repeat_thresholds(args, control_bam, tumor_bam)
+    ) = get_repeat_threshold.get_read_lengths_and_repeat_thresholds(
+        args, control_bam, tumor_bam
+    )
 
     ###############################
     ## run tumor sample for PID ###

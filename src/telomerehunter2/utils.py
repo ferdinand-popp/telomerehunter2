@@ -100,9 +100,12 @@ def check_banding_file(banding_file, outdir=None):
     try:
         try:
             df = pd.read_csv(banding_file, sep="\t", header=None)
-        except:
-            df = pd.read_csv(banding_file, header=None)
-            raise ValueError(f"Banding file is not a tsv file.")
+        except Exception:
+            try:
+                df = pd.read_csv(banding_file, header=None)
+            except Exception:
+                raise ValueError("Banding file could not be read as TSV or CSV.")
+
         if df.shape[1] < 4:
             raise ValueError(
                 f"File has fewer than 4 columns. Found {df.shape[1]} columns."
@@ -126,7 +129,9 @@ def check_banding_file(banding_file, outdir=None):
             print("!!! Only chromosome-level data found, no band information. !!!")
             print("The banding file should be discarded.")
             subs_cytobands_df = generate_banding_file(df)
-            print("\nGenerated substitution cytoband information (5% from chromosome ends):")
+            print(
+                "\nGenerated substitution cytoband information (5% from chromosome ends):"
+            )
             print(subs_cytobands_df.head())
             print(f"Total generated bands: {len(subs_cytobands_df)}")
             generated_banding_file_path = (
@@ -219,7 +224,7 @@ def has_filtering_output(outdir, pid, sample_id):
 
 
 def check_and_prompt_filtering(
-        filter_telomere_reads_flag, tumor_flag, control_flag, outdir, pid, no_filtering
+    filter_telomere_reads_flag, tumor_flag, control_flag, outdir, pid, no_filtering
 ):
     tumor_output_missing = (
         not has_filtering_output(outdir, pid, "tumor") if tumor_flag else False
@@ -327,10 +332,11 @@ def validate_args(args):
     # check that str input from fixedrepeatthreshold is either int or two ints separated by comma
     if args.fixed_repeat_thresholds:
         try:
-            thresholds = list(map(int, args.fixed_repeat_thresholds.split(',')))
+            thresholds = list(map(int, args.fixed_repeat_thresholds.split(",")))
             if len(thresholds) not in [1, 2]:
                 raise ValueError(
-                    "Invalid number of thresholds provided. Use one value or two values separated by a comma.")
+                    "Invalid number of thresholds provided. Use one value or two values separated by a comma."
+                )
             if any(threshold < 4 for threshold in thresholds):
                 print("!! Warning: Repeat thresholds should be at least 4.")
         except ValueError as e:
@@ -366,13 +372,13 @@ def validate_args(args):
 
 def validate_plotting_options(args):
     if args.plotNone and (
-            args.plotChr
-            or args.plotFractions
-            or args.plotTelContent
-            or args.plotGC
-            or args.plotRepeatFreq
-            or args.plotTVR
-            or args.plotSingleton
+        args.plotChr
+        or args.plotFractions
+        or args.plotTelContent
+        or args.plotGC
+        or args.plotRepeatFreq
+        or args.plotTVR
+        or args.plotSingleton
     ):
         raise ValueError(
             "argument -pno/--plotNone should not be specified when other plotting options are selected."
@@ -411,14 +417,14 @@ def validate_plotting_options(args):
 
     # if no plotting options are selected: plot all diagrams.
     if (
-            not args.plotChr
-            and not args.plotFractions
-            and not args.plotTelContent
-            and not args.plotGC
-            and not args.plotRepeatFreq
-            and not args.plotTVR
-            and not args.plotSingleton
-            and not args.plotNone
+        not args.plotChr
+        and not args.plotFractions
+        and not args.plotTelContent
+        and not args.plotGC
+        and not args.plotRepeatFreq
+        and not args.plotTVR
+        and not args.plotSingleton
+        and not args.plotNone
     ):
         args.plotChr = True
         args.plotFractions = True
@@ -465,7 +471,7 @@ def combine_summary_files(outdir, pid, tumor_flag, control_flag):
 
         # Append the last line of the control summary file to the combined summary file
         with open(control_summary_path, "r") as control_file, open(
-                summary_path, "a"
+            summary_path, "a"
         ) as combined_file:
             last_line = control_file.readlines()[-1]
             combined_file.write(last_line)
@@ -488,7 +494,8 @@ def get_version_from_package():
         str: The project version string, or "unknown" if not found
     """
     try:
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError, version
+
         try:
             return version("telomerehunter2")
         except PackageNotFoundError:

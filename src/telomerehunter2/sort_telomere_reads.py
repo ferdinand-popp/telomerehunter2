@@ -22,7 +22,7 @@ import os
 
 import pysam
 
-from telomerehunter2.utils import (get_band_info, get_reverse_complement)
+from telomerehunter2.utils import get_band_info, get_reverse_complement
 
 
 def make_band_and_spectrum_lists(band_file, patterns):
@@ -86,13 +86,13 @@ def make_band_and_spectrum_lists(band_file, patterns):
                 }
 
             except Exception as e:
-                print(f"Invalid line in banding file: '{line}'")
+                print(f"Invalid line in banding file: '{line}', {e}")
 
     return bands_list, spectrum_list, chromosome_list
 
 
 def write_spectrum_file(
-        out_dir, pid, chromosome_list, bands_list, spectrum_list, patterns
+    out_dir, pid, chromosome_list, bands_list, spectrum_list, patterns
 ):
     spectrum_file_path = os.path.join(out_dir, f"{pid}_spectrum.tsv")
 
@@ -109,7 +109,7 @@ def write_spectrum_file(
 
         for chromosome in chromosome_list:
             for band in (
-                    ["junction1"] + bands_list[chromosome]["band_name"] + ["junction2"]
+                ["junction1"] + bands_list[chromosome]["band_name"] + ["junction2"]
             ):
                 spectrum_file.write(
                     f"{chromosome}\t{band}\t{spectrum_list[chromosome][band]['reads_with_pattern']}"
@@ -148,11 +148,11 @@ def get_default_spectrum_list(patterns, spectrum_list):
 
 
 def close_file_handles(
-        bamfile,
-        intratelomeric_file,
-        junctionspanning_file,
-        subtelomeric_file,
-        intrachromosomal_file,
+    bamfile,
+    intratelomeric_file,
+    junctionspanning_file,
+    subtelomeric_file,
+    intrachromosomal_file,
 ):
     bamfile.close()
     intratelomeric_file.close()
@@ -187,9 +187,9 @@ def read_check(read, references, bands_list, chromosome_list, mapq_threshold):
 
     # check if read is considered unmapped
     if (
-            read.is_unmapped
-            or read_ref not in chromosome_list
-            or read.mapping_quality < mapq_threshold
+        read.is_unmapped
+        or read_ref not in chromosome_list
+        or read.mapping_quality < mapq_threshold
     ):
         read_is_unmapped = True
         chromosome, band = "unmapped", "unmapped"
@@ -201,7 +201,7 @@ def read_check(read, references, bands_list, chromosome_list, mapq_threshold):
         # find band
         i = 0
         while read.pos > bands_list[chromosome]["end"][i] and i < (
-                len(bands_list[chromosome]["end"]) - 1
+            len(bands_list[chromosome]["end"]) - 1
         ):
             i += 1
         else:
@@ -220,16 +220,16 @@ def read_check(read, references, bands_list, chromosome_list, mapq_threshold):
 
 # function for sorting reads without a mate into correct fraction and add counts to spectrum list
 def sort_reads_without_mate(
-        read,
-        references,
-        bands_list,
-        chromosome_list,
-        mapq_threshold,
-        spectrum_list,
-        patterns,
-        intratelomeric_file,
-        subtelomeric_file,
-        intrachromosomal_file,
+    read,
+    references,
+    bands_list,
+    chromosome_list,
+    mapq_threshold,
+    spectrum_list,
+    patterns,
+    intratelomeric_file,
+    subtelomeric_file,
+    intrachromosomal_file,
 ):
     """
     Sort reads without a mate into the correct fraction and update counts.
@@ -273,8 +273,8 @@ def sort_reads_without_mate(
     # get count of other e.g. hexamers found
     k_mer_length = len(patterns[0])
     spectrum_list[chromosome][band]["other"] += (
-                                                        float(len(read.query_sequence)) / k_mer_length
-                                                ) - read_total_pattern_count
+        float(len(read.query_sequence)) / k_mer_length
+    ) - read_total_pattern_count
 
 
 # function for writing reads with mates to fraction and adding counts to spectrum list
@@ -306,21 +306,21 @@ def sort_read_with_mate(read, fraction_file, chromosome, band, spectrum_list, pa
     # get count of other e.g. hexamers found
     k_mer_length = len(patterns[0])
     spectrum_list[chromosome][band]["other"] += (
-                                                        float(len(read.query_sequence)) / k_mer_length
-                                                ) - read_total_pattern_count
+        float(len(read.query_sequence)) / k_mer_length
+    ) - read_total_pattern_count
 
 
 def process_reads(
-        bamfile,
-        chromosome_list,
-        bands_list,
-        spectrum_list,
-        patterns,
-        mapq_threshold,
-        intratelomeric_file,
-        junctionspanning_file,
-        subtelomeric_file,
-        intrachromosomal_file,
+    bamfile,
+    chromosome_list,
+    bands_list,
+    spectrum_list,
+    patterns,
+    mapq_threshold,
+    intratelomeric_file,
+    junctionspanning_file,
+    subtelomeric_file,
+    intrachromosomal_file,
 ):
     """
     Process paired-end reads and categorize them into different fractions based on mapping characteristics.
@@ -459,7 +459,6 @@ def process_reads(
 
         # INTRATELOMERIC: both mates are unmapped
         if read1_is_unmapped and read2_is_unmapped:
-
             sort_read_with_mate(
                 read=read1,
                 fraction_file=intratelomeric_file,
@@ -479,9 +478,8 @@ def process_reads(
 
         # JUNCTION SPANNING: one mate is unmapped and the other mate is mapped to first or last band of chromosome
         elif (read1_is_unmapped and read2_junctionspanning) or (
-                read2_is_unmapped and read1_junctionspanning
+            read2_is_unmapped and read1_junctionspanning
         ):
-
             if read1_is_unmapped:
                 chromosome = read2_chromosome
                 band = read2_junction
@@ -508,7 +506,6 @@ def process_reads(
 
         # SUBTELOMERIC: both mates are mapped to first or last band or chromosome (and have similar mapping positions)
         elif read1_junctionspanning and read2_junctionspanning:
-
             sort_read_with_mate(
                 read=read1,
                 fraction_file=subtelomeric_file,
@@ -528,7 +525,6 @@ def process_reads(
 
         # SUBTELOMERIC/INTRACHROMOSOMAL: one read is subtelomeric, the other is intra-chromosomal => count and sort individually
         elif read1_junctionspanning or read2_junctionspanning:
-
             if read1_junctionspanning:
                 read1_file = subtelomeric_file
                 read2_file = intrachromosomal_file
@@ -555,9 +551,8 @@ def process_reads(
 
         # INTRACHROMOSOMAL: one read is intra-chromosomal, the other is unmapped => count both to position of mapped read
         elif (read1_is_unmapped and not read2_junctionspanning) or (
-                read2_is_unmapped and not read1_junctionspanning
+            read2_is_unmapped and not read1_junctionspanning
         ):
-
             if read1_is_unmapped:
                 chromosome = read2_chromosome
                 band = read2_band
@@ -584,7 +579,6 @@ def process_reads(
 
         # INTRACHROMOSOMAL: both mapped
         else:
-
             sort_read_with_mate(
                 read=read1,
                 fraction_file=intrachromosomal_file,
@@ -670,8 +664,8 @@ def count_patterns_in_read_no_banding(read, mapq_threshold, patterns, spectrum_l
     # get count of other e.g. hexamers found
     k_mer_length = len(patterns[0])
     spectrum_list[ref][band]["other"] += (
-                                                 float(len(read.query_sequence)) / k_mer_length
-                                         ) - read_total_pattern_count
+        float(len(read.query_sequence)) / k_mer_length
+    ) - read_total_pattern_count
 
     # count in general the read with count
     spectrum_list[ref][band]["reads_with_pattern"] += 1
@@ -680,12 +674,12 @@ def count_patterns_in_read_no_banding(read, mapq_threshold, patterns, spectrum_l
 
 
 def sort_read_without_mate_no_banding(
-        read,
-        mapq_threshold,
-        patterns,
-        intratelomeric_file,
-        intrachromosomal_file,
-        spectrum_list,
+    read,
+    mapq_threshold,
+    patterns,
+    intratelomeric_file,
+    intrachromosomal_file,
+    spectrum_list,
 ):
     is_mapped_read = read.is_mapped and read.mapping_quality >= mapq_threshold
     # Categorize reads and write them to respective files
@@ -705,7 +699,7 @@ def sort_read_without_mate_no_banding(
 
 
 def process_reads_no_banding(
-        bamfile, patterns, mapq_threshold, intratelomeric_file, intrachromosomal_file
+    bamfile, patterns, mapq_threshold, intratelomeric_file, intrachromosomal_file
 ):
     break_flag = False
     # dict with levels: reference_name, band, count
