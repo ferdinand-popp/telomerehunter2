@@ -62,48 +62,81 @@ def is_telomere_read(
         )
 
 
-def initialize_chromosome_and_band_data(bamfile, band_file):
-    """Initialize chromosome and band data structures for filtering."""
+def initialize_chromosome_and_band_data(bamfile, band_file=None):
+    """Initialize chromosome and band data structures for filtering.
+    If band_file is provided, use get_band_info(band_file). Otherwise,
+    create a default single-band per mapped chromosome using bamfile references/lengths.
+    """
     references = bamfile.references
+    lengths = bamfile.lengths
     bam_chr_prefix = "chr" if references and references[0].startswith("chr") else ""
 
-    # Use the utility method to get band info
-    band_info, sorted_chromosomes = get_band_info(band_file)
+    if band_file:
+        # Use the utility method to get band info
+        band_info, sorted_chromosomes = get_band_info(band_file)
 
-    # Create a pickle-compatible structure for band lookups
-    bands_dict = {}
-    # Track band order for each chromosome
-    band_order = {}
+        # Create a pickle-compatible structure for band lookups
+        bands_dict = {}
+        # Track band order for each chromosome
+        band_order = {}
 
-    # Process band info into our structure
-    for _, row in band_info.iterrows():
-        chrom = row["chr"]
-        if chrom not in bands_dict:
-            bands_dict[chrom] = {"bands": []}
-            band_order[chrom] = []
+        # Process band info into our structure
+        for _, row in band_info.iterrows():
+            chrom = row["chr"]
+            if chrom not in bands_dict:
+                bands_dict[chrom] = {"bands": []}
+                band_order[chrom] = []
 
-        bands_dict[chrom]["bands"].append({"name": row["band_name"], "end": row["end"]})
-        band_order[chrom].append(row["band_name"])
+            bands_dict[chrom]["bands"].append(
+                {"name": row["band_name"], "end": row["end"]}
+            )
+            band_order[chrom].append(row["band_name"])
 
-    # Add unmapped category
-    bands_dict["unmapped"] = {"bands": [{"name": "unmapped", "end": 0}]}
-    band_order["unmapped"] = ["unmapped"]
+        # Add unmapped category
+        bands_dict["unmapped"] = {"bands": [{"name": "unmapped", "end": 0}]}
+        band_order["unmapped"] = ["unmapped"]
 
-    # Ensure bands are sorted by end position while maintaining name reference
-    for chrom in bands_dict:
-        bands_dict[chrom]["bands"].sort(key=lambda x: x["end"])
+        # Ensure bands are sorted by end position while maintaining name reference
+        for chrom in bands_dict:
+            bands_dict[chrom]["bands"].sort(key=lambda x: x["end"])
 
+        chromosome_list = sorted_chromosomes
+    else:
+        # No band file provided: create a single band per reference (use stripped-name keys)
+        bands_dict = {}
+        band_order = {}
+        chromosome_list = []
+        for ref, length in zip(references, lengths):
+            # Create key without 'chr' prefix to match lookup behavior in process_region
+            key = ref[3:] if ref.startswith("chr") else ref
+            # End is last 0-based position
+            end_pos = length - 1 if length is not None else 0
+            bands_dict[key] = {"bands": [{"name": key, "end": end_pos}]}
+            band_order[key] = [key]
+            chromosome_list.append(key)
+
+        # Add unmapped category
+        bands_dict["unmapped"] = {"bands": [{"name": "unmapped", "end": 0}]}
+        band_order["unmapped"] = ["unmapped"]
+
+    # Return references and lengths as well for region creation
     return {
         "bam_chr_prefix": bam_chr_prefix,
         "bands": bands_dict,
         "band_order": band_order,
-        "chromosome_list": sorted_chromosomes,
+        "chromosome_list": chromosome_list,
         "references": references,
     }
 
 
 def write_output(
-    out_dir, pid, sample, gc_content_list, read_counts, band_info=None, barcode_counts=None
+    out_dir,
+    pid,
+    sample,
+    gc_content_list,
+    read_counts,
+    band_info=None,
+    barcode_counts=None,
 ):
     # Write read counts
     readcount_file_path = os.path.join(out_dir, f"{pid}_readcount.tsv")
@@ -175,7 +208,9 @@ def process_region(args):
     last_position = 0
     filtered_read_count = 0
 
-    with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
+    with pysam.AlignmentFile(
+        bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+    ) as bamfile:
         # Build header: all @SQ lines, remove RG/PG/CO
         header = bamfile.header.to_dict()
         for tag in ["RG", "PG", "CO"]:
@@ -319,7 +354,9 @@ def process_unmapped_reads(args):
     barcode_counts = defaultdict(int) if singlecell_mode else None
     total_reads_processed = 0
 
-    with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
+    with pysam.AlignmentFile(
+        bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+    ) as bamfile:
         # Build minimal header: all @SQ, remove RG/PG/CO
         header = bamfile.header.to_dict()
         for tag in ["RG", "PG", "CO"]:
@@ -335,7 +372,9 @@ def process_unmapped_reads(args):
                         bamfile.reset()
                     fetch_reads = bamfile.fetch(until_eof=True)
                 else:
-                    fetch_reads = bamfile.fetch(contig="*") # check for BAM and CRAM unmapped=True
+                    fetch_reads = bamfile.fetch(
+                        contig="*"
+                    )  # check for BAM and CRAM unmapped=True
 
                 for read in fetch_reads:
                     try:
@@ -446,15 +485,14 @@ def parallel_filter_telomere_reads(
 
     try:
         print(f"Using {num_workers} cores for region-based parallelism")
-        # Initialize chromosome and band data if given
-        with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
-            band_info = (
-                initialize_chromosome_and_band_data(bamfile, band_file)
-                if band_file
-                else None
-            )
+        # Initialize chromosome and band data (handles band_file==None internally)
+        with pysam.AlignmentFile(
+            bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+        ) as bamfile:
+            band_info = initialize_chromosome_and_band_data(bamfile, band_file)
             references = bamfile.references
             lengths = bamfile.lengths
+
         # Compile regex patterns
         patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats)
 
@@ -488,9 +526,7 @@ def parallel_filter_telomere_reads(
                 if unmapped_result is not None:
                     results.append(unmapped_result)
                     total_filtered_reads += unmapped_result["filtered_read_count"]
-                    for bc, count in unmapped_result.get(
-                        "barcode_counts", {}
-                    ).items():
+                    for bc, count in unmapped_result.get("barcode_counts", {}).items():
                         barcode_counts_merged[bc] += count
                     print(
                         f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
