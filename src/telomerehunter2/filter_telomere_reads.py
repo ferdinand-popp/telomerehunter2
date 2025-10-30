@@ -103,21 +103,22 @@ def initialize_chromosome_and_band_data(bamfile, band_file):
 
 
 def write_output(
-    out_dir, pid, sample, gc_content_list, read_counts, band_info, barcode_counts=None
+    out_dir, pid, sample, gc_content_list, read_counts, band_info=None, barcode_counts=None
 ):
     # Write read counts
     readcount_file_path = os.path.join(out_dir, f"{pid}_readcount.tsv")
     with open(readcount_file_path, "w") as readcount_file:
         readcount_file.write("chr\tband\treads\n")
-        # Use the original chromosome order
-        for ref in band_info["chromosome_list"]:
-            if ref in read_counts:
-                # Use the original band order for each chromosome
-                for band in band_info["band_order"][ref]:
-                    count = read_counts[ref].get(band, 0)
-                    readcount_file.write(f"{ref}\t{band}\t{count}\n")
+        if band_info:
+            # Use the original chromosome order
+            for ref in band_info["chromosome_list"]:
+                if ref in read_counts:
+                    # Use the original band order for each chromosome
+                    for band in band_info["band_order"][ref]:
+                        count = read_counts[ref].get(band, 0)
+                        readcount_file.write(f"{ref}\t{band}\t{count}\n")
 
-        # Write unmapped reads last if they exist
+        # Write unmapped reads last if they exist and band_info is present
         if "unmapped" in read_counts:
             readcount_file.write(
                 f"unmapped\tunmapped\t{read_counts['unmapped']['unmapped']}\n"
@@ -174,8 +175,7 @@ def process_region(args):
     last_position = 0
     filtered_read_count = 0
 
-    open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-    with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
+    with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
         # Build header: all @SQ lines, remove RG/PG/CO
         header = bamfile.header.to_dict()
         for tag in ["RG", "PG", "CO"]:
@@ -319,8 +319,7 @@ def process_unmapped_reads(args):
     barcode_counts = defaultdict(int) if singlecell_mode else None
     total_reads_processed = 0
 
-    open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-    with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
+    with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
         # Build minimal header: all @SQ, remove RG/PG/CO
         header = bamfile.header.to_dict()
         for tag in ["RG", "PG", "CO"]:
@@ -329,17 +328,18 @@ def process_unmapped_reads(args):
         with pysam.AlignmentFile(temp_bam, mode="wb", header=header) as filtered_file:
             try:
                 # Bam uses seek, Cram needs last reference
-                if open_mode == "rb":
+                if bam_path.endswith(".bam"):
                     if start_position > 0:
                         bamfile.seek(start_position)
                     else:
                         bamfile.reset()
                     fetch_reads = bamfile.fetch(until_eof=True)
                 else:
-                    fetch_reads = bamfile.fetch(contig="*")
+                    fetch_reads = bamfile.fetch(contig="*") # check for BAM and CRAM unmapped=True
 
                 for read in fetch_reads:
                     try:
+                        total_reads_processed += 1
                         if not read.is_unmapped:
                             continue
                         if (
@@ -388,9 +388,6 @@ def process_unmapped_reads(args):
                     except Exception as e:
                         print(f"Error processing unmapped read: {e}")
                         traceback.print_exc()
-            except (MemoryError, OSError) as e:
-                print(f"Error processing unmapped reads: {e}")
-                traceback.print_exc()
             except Exception as e:
                 print(f"Unexpected error in unmapped reads: {e}")
                 traceback.print_exc()
@@ -401,7 +398,6 @@ def process_unmapped_reads(args):
         )
     else:
         print(f"Total unmapped reads processed: {total_reads_processed}")
-        print(f"Total telomeric reads found in unmapped reads: {filtered_read_count}")
 
     return {
         "region": "unmapped",
@@ -450,9 +446,8 @@ def parallel_filter_telomere_reads(
 
     try:
         print(f"Using {num_workers} cores for region-based parallelism")
-        # Initialize chromosome and band data
-        open_mode = "rb" if bam_path.endswith(".bam") else "rc"
-        with pysam.AlignmentFile(bam_path, mode=open_mode) as bamfile:
+        # Initialize chromosome and band data if given
+        with pysam.AlignmentFile(bam_path, mode="rb" if bam_path.endswith(".bam") else "rc") as bamfile:
             band_info = (
                 initialize_chromosome_and_band_data(bamfile, band_file)
                 if band_file
@@ -460,7 +455,6 @@ def parallel_filter_telomere_reads(
             )
             references = bamfile.references
             lengths = bamfile.lengths
-
         # Compile regex patterns
         patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats)
 
@@ -490,27 +484,17 @@ def parallel_filter_telomere_reads(
                 singlecell_mode,
             )
             try:
-                try:
-                    unmapped_result = process_unmapped_reads(unmapped_args)
-                    if unmapped_result is not None:
-                        results.append(unmapped_result)
-                        total_filtered_reads += unmapped_result["filtered_read_count"]
-                        for bc, count in unmapped_result.get(
-                            "barcode_counts", {}
-                        ).items():
-                            barcode_counts_merged[bc] += count
-                        print(
-                            f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
-                        )
-                except BrokenProcessPool as bpe:
+                unmapped_result = process_unmapped_reads(unmapped_args)
+                if unmapped_result is not None:
+                    results.append(unmapped_result)
+                    total_filtered_reads += unmapped_result["filtered_read_count"]
+                    for bc, count in unmapped_result.get(
+                        "barcode_counts", {}
+                    ).items():
+                        barcode_counts_merged[bc] += count
                     print(
-                        "ERROR: BrokenProcessPool encountered during unmapped region processing."
+                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
                     )
-                    print(
-                        "This may be due to memory issues, corrupted BAM/CRAM, or a bug in process_unmapped_reads."
-                    )
-                    print(f"Details: {bpe}")
-                    raise
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
         else:

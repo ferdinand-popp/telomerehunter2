@@ -301,9 +301,9 @@ def validate_args(args):
 
         # check banding file and if only chromosomes, create 5% bands
         args.banding_file = check_banding_file(args.banding_file, args.outdir)
-    else:
+    elif not args.fast_mode:
         print(
-            "No banding file supplied, so all banding steps will be skipped and specific plots omitted."
+            "!! No banding file supplied, so all banding steps will be skipped and specific plots omitted."
         )
 
     # check if repeats only contains ACGT and are between 4 and 9 bases

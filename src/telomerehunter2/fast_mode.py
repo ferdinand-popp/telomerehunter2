@@ -44,7 +44,7 @@ def run_fast_mode(args):
     write_fast_mode_combined_summary(args, out_dir, tumor_summary, control_summary)
 
 
-def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file):
+def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file=None):
     sample_out_dir = os.path.join(out_dir, f"{sample_name}_TelomerCnt_{args.pid}")
     os.makedirs(sample_out_dir, exist_ok=True)
     temp_unmapped_bam = os.path.join(
