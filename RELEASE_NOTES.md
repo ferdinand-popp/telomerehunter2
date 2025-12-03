@@ -1,5 +1,13 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.5 (2025-10-30)
+
+### Highlights
+
+- run without banding_file now using bam file references but cannot sort into telomeric regions so tel_content not comparable
+- fast_mode improved to run only on unmapped reads
+- added links to TH1 website and documentation in README.md
+
 ## v1.0.4 (2025-10-19)
 
 ### Highlights
