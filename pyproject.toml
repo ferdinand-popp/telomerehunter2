@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telomerehunter2"
-version = "1.0.4"
+version = "1.0.5"
 description = "An advanced version of TelomereHunter for Python 3, with new features"
 authors = [
   {name = "FP", email = "f.popp@dkfz.de"},
