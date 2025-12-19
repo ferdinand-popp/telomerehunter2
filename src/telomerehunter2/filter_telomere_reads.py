@@ -40,11 +40,11 @@ def compile_patterns(repeats):
 
 
 def is_telomere_read(
-    consecutive_flag,
-    patterns_regex_forward,
-    patterns_regex_reverse,
-    sequence,
-    repeat_threshold_calc,
+        consecutive_flag,
+        patterns_regex_forward,
+        patterns_regex_reverse,
+        sequence,
+        repeat_threshold_calc,
 ):
     # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
@@ -57,8 +57,8 @@ def is_telomere_read(
     else:
         # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
 
 
@@ -130,13 +130,13 @@ def initialize_chromosome_and_band_data(bamfile, band_file=None):
 
 
 def write_output(
-    out_dir,
-    pid,
-    sample,
-    gc_content_list,
-    read_counts,
-    band_info=None,
-    barcode_counts=None,
+        out_dir,
+        pid,
+        sample,
+        gc_content_list,
+        read_counts,
+        band_info=None,
+        barcode_counts=None,
 ):
     # Write read counts
     readcount_file_path = os.path.join(out_dir, f"{pid}_readcount.tsv")
@@ -197,6 +197,7 @@ def process_region(args):
         band_info,
         temp_dir,
         singlecell_mode,
+        barcode_tag,
     ) = args
 
     chrom, start, end = region_info  # unpack tuple
@@ -209,7 +210,7 @@ def process_region(args):
     filtered_read_count = 0
 
     with pysam.AlignmentFile(
-        bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+            bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
     ) as bamfile:
         # Build header: all @SQ lines, remove RG/PG/CO
         header = bamfile.header.to_dict()
@@ -228,9 +229,9 @@ def process_region(args):
                         is_unmapped = read.is_unmapped
                         mapping_quality = read.mapping_quality
                         if (
-                            read.is_secondary
-                            or read.is_supplementary
-                            or (remove_duplicates and read.is_duplicate)
+                                read.is_secondary
+                                or read.is_supplementary
+                                or (remove_duplicates and read.is_duplicate)
                         ):
                             continue
 
@@ -239,7 +240,7 @@ def process_region(args):
                         try:
                             read_length = len(sequence)
                         except (
-                            TypeError
+                                TypeError
                         ):  # skip if there is no sequence for read in BAM file
                             continue
 
@@ -295,17 +296,17 @@ def process_region(args):
 
                         # Barcode counting
                         if singlecell_mode:
-                            bc = read.get_tag("CB") if read.has_tag("CB") else None
-                            if bc:
+                            if read.has_tag(barcode_tag):
+                                bc = read.get_tag(barcode_tag)
                                 barcode_counts[bc] += 1
 
                         # Check if it's a telomere read
                         if is_telomere_read(
-                            consecutive_flag,
-                            patterns_regex_forward,
-                            patterns_regex_reverse,
-                            sequence,
-                            repeat_threshold_calc,
+                                consecutive_flag,
+                                patterns_regex_forward,
+                                patterns_regex_reverse,
+                                sequence,
+                                repeat_threshold_calc,
                         ):
                             filtered_file.write(read)
                             filtered_read_count += 1
@@ -342,7 +343,8 @@ def process_unmapped_reads(args):
         remove_duplicates,
         temp_dir,
         start_position,
-        singlecell_mode,  # Add singlecell_mode to args
+        singlecell_mode,
+        barcode_tag,
     ) = args
 
     region_name = "unmapped"
@@ -355,7 +357,7 @@ def process_unmapped_reads(args):
     total_reads_processed = 0
 
     with pysam.AlignmentFile(
-        bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+            bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
     ) as bamfile:
         # Build minimal header: all @SQ, remove RG/PG/CO
         header = bamfile.header.to_dict()
@@ -382,9 +384,9 @@ def process_unmapped_reads(args):
                         if not read.is_unmapped:
                             continue
                         if (
-                            read.is_secondary
-                            or read.is_supplementary
-                            or (remove_duplicates and read.is_duplicate)
+                                read.is_secondary
+                                or read.is_supplementary
+                                or (remove_duplicates and read.is_duplicate)
                         ):
                             continue
 
@@ -410,17 +412,17 @@ def process_unmapped_reads(args):
 
                         # Barcode counting
                         if singlecell_mode:
-                            bc = read.get_tag("CB") if read.has_tag("CB") else None
-                            if bc:
+                            if read.has_tag(barcode_tag):
+                                bc = read.get_tag(barcode_tag)
                                 barcode_counts[bc] += 1
 
                         # Check if it's a telomere read
                         if is_telomere_read(
-                            consecutive_flag,
-                            patterns_regex_forward,
-                            patterns_regex_reverse,
-                            sequence,
-                            repeat_threshold_calc,
+                                consecutive_flag,
+                                patterns_regex_forward,
+                                patterns_regex_reverse,
+                                sequence,
+                                repeat_threshold_calc,
                         ):
                             filtered_file.write(read)
                             filtered_read_count += 1
@@ -449,19 +451,20 @@ def process_unmapped_reads(args):
 
 
 def parallel_filter_telomere_reads(
-    bam_path,
-    out_dir,
-    pid,
-    sample,
-    repeat_threshold_calc,
-    mapq_threshold,
-    repeats,
-    consecutive_flag,
-    remove_duplicates,
-    band_file=None,
-    num_processes=None,
-    singlecell_mode=None,
-    fast_mode=False,
+        bam_path,
+        out_dir,
+        pid,
+        sample,
+        repeat_threshold_calc,
+        mapq_threshold,
+        repeats,
+        consecutive_flag,
+        remove_duplicates,
+        band_file=None,
+        num_processes=None,
+        singlecell_mode=None,
+        fast_mode=False,
+        barcode_tag="CB",
 ):
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
@@ -487,7 +490,7 @@ def parallel_filter_telomere_reads(
         print(f"Using {num_workers} cores for region-based parallelism")
         # Initialize chromosome and band data (handles band_file==None internally)
         with pysam.AlignmentFile(
-            bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
+                bam_path, mode="rb" if bam_path.endswith(".bam") else "rc"
         ) as bamfile:
             band_info = initialize_chromosome_and_band_data(bamfile, band_file)
             references = bamfile.references
@@ -520,6 +523,7 @@ def parallel_filter_telomere_reads(
                 temp_dir,
                 0,  # start_position
                 singlecell_mode,
+                barcode_tag,
             )
             try:
                 unmapped_result = process_unmapped_reads(unmapped_args)
@@ -553,6 +557,7 @@ def parallel_filter_telomere_reads(
                         band_info,
                         temp_dir,
                         singlecell_mode,
+                        barcode_tag,
                     )
                     futures.append(executor.submit(process_region, args))
                 try:
@@ -567,7 +572,7 @@ def parallel_filter_telomere_reads(
                                 )
                                 total_filtered_reads += result["filtered_read_count"]
                                 for bc, count in result.get(
-                                    "barcode_counts", {}
+                                        "barcode_counts", {}
                                 ).items():
                                     barcode_counts_merged[bc] += count
                                 print(
@@ -605,6 +610,7 @@ def parallel_filter_telomere_reads(
                 temp_dir,
                 max_position,
                 singlecell_mode,
+                barcode_tag,
             )
 
             try:
@@ -614,7 +620,7 @@ def parallel_filter_telomere_reads(
                         results.append(unmapped_result)
                         total_filtered_reads += unmapped_result["filtered_read_count"]
                         for bc, count in unmapped_result.get(
-                            "barcode_counts", {}
+                                "barcode_counts", {}
                         ).items():
                             barcode_counts_merged[bc] += count
                         print(
@@ -655,7 +661,7 @@ def parallel_filter_telomere_reads(
             result["temp_bam"]
             for result in results
             if os.path.exists(result["temp_bam"])
-            and os.path.getsize(result["temp_bam"]) > 0
+               and os.path.getsize(result["temp_bam"]) > 0
         ]
 
         if temp_bams:
@@ -684,9 +690,9 @@ def parallel_filter_telomere_reads(
             print("Warning: No reads passed filtering criteria")
 
         if (
-            singlecell_mode
-            and isinstance(barcode_counts_merged, dict)
-            and not barcode_counts_merged
+                singlecell_mode
+                and isinstance(barcode_counts_merged, dict)
+                and not barcode_counts_merged
         ):
             print(
                 "Warning: single-cell mode is active but no barcodes were found. This may indicate an error in barcode extraction or input data."

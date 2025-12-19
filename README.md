@@ -87,7 +87,8 @@ TelomereHunter2 now supports direct single-cell BAM analysis (with CB barcode ta
 This will perform barcode-aware telomere analysis and output per-cell results in a summary file. The minimum reads per
 barcode threshold can be set with `--min-reads-per-barcode`. To rerun postprocessing with adjusted `--min-reads-per-barcode` 
 threshold run command again with `--noFiltering` to skip the expensive filtering step from all reads to telomeric reads.
-More information on correcting chromatin state for scATAC follows in publication.
+If the reads have a different barcode tag than `CB`, use `--barcodeTag` to set the correct one.
+More information on correcting chromatin state for scATAC follows in (Engel et al., 2024).
 
 See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 
