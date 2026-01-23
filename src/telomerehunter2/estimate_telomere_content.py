@@ -180,9 +180,16 @@ def estimate_telomere_content(
 
         # Results
         gc_bins = f"{gc_lower}-{gc_upper}"
+
+        # counts_df is a 1-row DataFrame; select the scalar, not the 1-D .values array
+        intratelomeric = int(counts_df["intratelomeric"].iloc[0])
+        junctionspanning = int(counts_df["junctionspanning"].iloc[0])
+        subtelomeric = int(counts_df["subtelomeric"].iloc[0])
+        intrachromosomal = int(counts_df["intrachromosomal"].iloc[0])
+
         results_line = (
             f"{pid}\t{sample}\t{total_read_count}\t{read_length}\t{repeat_threshold_set}\t"
-            f"{repeat_threshold_str}\t{int(counts_df['intratelomeric'].values)}\t{int(counts_df['junctionspanning'].values)}\t{int(counts_df['subtelomeric'].values)}\t{int(counts_df['intrachromosomal'].values)}\t{tel_read_count}\t{gc_bins}\t"
+            f"{repeat_threshold_str}\t{intratelomeric}\t{junctionspanning}\t{subtelomeric}\t{intrachromosomal}\t{tel_read_count}\t{gc_bins}\t"
             f"{sum_over_threshold}\t{tel_content:.6f}\t{trpm:.6f}\n"
         )
         summary_file.write(results_line)
