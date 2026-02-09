@@ -1,8 +1,10 @@
 # TelomereHunter2
 
 [![PyPI version](https://img.shields.io/pypi/v/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/telomerehunter2)](https://pypi.org/project/telomerehunter2/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://ferdinand-popp.github.io/telomerehunter2/)
+[![CI](https://img.shields.io/github/actions/workflow/status/ferdinand-popp/telomerehunter2/docker-multiarch.yml?branch=main)](https://github.com/ferdinand-popp/telomerehunter2/actions/workflows/docker-multiarch.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ferdinand-popp/telomerehunter2/pypi-release.yml?branch=main)](https://github.com/ferdinand-popp/telomerehunter2/actions)
 [![Python Versions](https://img.shields.io/pypi/pyversions/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
 [![Last Commit](https://img.shields.io/github/last-commit/ferdinand-popp/telomerehunter2.svg)](https://github.com/ferdinand-popp/telomerehunter2/commits/main)
@@ -115,26 +117,26 @@ See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 
 ### Explanation of summary.tsv
 
-| Column                                          | Value example | Description                                                         |
-|-------------------------------------------------|---------------|---------------------------------------------------------------------|
-| PID                                             | TEST_PATIENT  | Sample name                                                         |
-| sample                                          | tumor         | Sample classification (tumor (single), control, log2(t/c))          |
-| **tel_content**                                 | 1.8           | Intratelomeric reads / reads in GC correction range * 1e6           |
-| total_reads                                     | 120           | Number of reads in the input file                                   |
-| read_lengths                                    | 25,36,42,54   | Unique lengths of reads                                             |
-| repeat_threshold_set                            | 6 per 100 bp  | Telomeric repeat threshold set                                      |
-| repeat_threshold_used                           | 4             | Repeats threshold applied based on avg. read length                 |
-| intratelomeric_reads                            | 4             | Filtered Tel reads in unmapped reads                                |
-| junctionspanning_reads                          | 0             | Filtered Tel reads spanning junctions into first/last band          |
-| subtelomeric_reads                              | 6             | Filtered Tel reads in subtelomeric regions (first/last band)        |
-| intrachromosomal_reads                          | 0             | Filtered Tel reads in intrachromosomal regions                      |
-| tel_read_count                                  | 10            | Total telomeric reads identified                                    |
-| gc_bins_for_correction                          | 48-52         | GC content range used for normalization of reads                    |
-| total_reads_with_tel_gc                         | 8             | Total reads within GC bin for normalization                         |
-| TCAGGG_arbitrary_context_norm_by_intratel_reads | 1.5           | Telomeric variant repeat count normalized by intratelomeric reads   |
-| ...                                             | ...           | ...                                                                 |
-| TCAGGG_singletons_norm_by_all_reads             | 0.0           | Singleton (TVR flanked by canonicals) count normalized by all reads |
-| ...                                             | ...           | ...                                                                 |
+| Column                                          | Example      | Description                                                         |
+|-------------------------------------------------|--------------|---------------------------------------------------------------------|
+| PID                                             | PATIENT1     | Sample name                                                         |
+| sample                                          | tumor        | Sample classification (tumor (single), control, log2(t/c))          |
+| **tel_content**                                 | 1.8          | Intratelomeric reads / reads in GC correction range * 1e6           |
+| total_reads                                     | 120          | Number of reads in the input file                                   |
+| read_lengths                                    | 25,36,42,54  | Unique lengths of reads                                             |
+| repeat_threshold_set                            | 6 per 100 bp | Telomeric repeat threshold set                                      |
+| repeat_threshold_used                           | 4            | Repeats threshold applied based on avg. read length                 |
+| intratelomeric_reads                            | 4            | Filtered Tel reads in unmapped reads                                |
+| junctionspanning_reads                          | 0            | Filtered Tel reads spanning junctions into first/last band          |
+| subtelomeric_reads                              | 6            | Filtered Tel reads in subtelomeric regions (first/last band)        |
+| intrachromosomal_reads                          | 0            | Filtered Tel reads in intrachromosomal regions                      |
+| tel_read_count                                  | 10           | Total telomeric reads identified                                    |
+| gc_bins_for_correction                          | 48-52        | GC content range used for normalization of reads                    |
+| total_reads_with_tel_gc                         | 8            | Total reads within GC bin for normalization                         |
+| TCAGGG_arbitrary_context_norm_by_intratel_reads | 1.5          | Telomeric variant repeat count normalized by intratelomeric reads   |
+| ...                                             | ...          | ...                                                                 |
+| TCAGGG_singletons_norm_by_all_reads             | 0.0          | Singleton (TVR flanked by canonicals) count normalized by all reads |
+| ...                                             | ...          | ...                                                                 |
 
 ## Dependencies
 
@@ -203,9 +205,9 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 ## Documentation & Resources
 
-- [Wiki](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
-- [Example Data](tests/)
-- [Tutorial Videos](https://github.com/fpopp22/telomerehunter2/wiki) (WIP)
+- Docs (MkDocs / GitHub Pages): https://ferdinand-popp.github.io/telomerehunter2/
+- GitHub Wiki (optional): https://github.com/ferdinand-popp/telomerehunter2/wiki
+- Example Data: https://github.com/ferdinand-popp/telomerehunter2/tree/main/tests
 - [Telomerehunter Website](https://www.dkfz.de/angewandte-bioinformatik/telomerehunter)
 - [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
 

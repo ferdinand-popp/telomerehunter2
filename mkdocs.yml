@@ -1,0 +1,19 @@
+site_name: TelomereHunter2
+repo_url: https://github.com/ferdinand-popp/telomerehunter2
+repo_name: ferdinand-popp/telomerehunter2
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Intro: intro.md
+  - Quickstart: quickstart.md
+  - Use cases: usecases.md
+  - FAQ: faq.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
