@@ -1,5 +1,13 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.6 (2026-02-09)
+
+### Highlights
+
+- Added/updated MkDocs documentation and GitHub Pages site generation
+- README updates and general documentation cleanup
+- No algorithmic/analysis changes (documentation-only release)
+
 ## v1.0.5 (2025-12-19)
 
 ### Highlights
