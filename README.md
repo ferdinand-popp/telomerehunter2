@@ -215,8 +215,11 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 - scATAC tutorial: WIP with publication
 - Simple run with 1000genomes data:
+
   wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+
   wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+
   telomerehunter2 -p test20vsunmapped -ibt HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -ibc HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -o /results/
 
 
