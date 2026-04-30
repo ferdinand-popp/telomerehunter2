@@ -1,5 +1,12 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.7 (2026-04-30)
+
+### Highlights
+
+- README updates on example data and tutorial (more to come in wiki)
+- Bugfix for compiled regex pattern usage in filter_telomere_reads for consecutive patterns (@andreapolazzi)
+
 ## v1.0.6 (2026-02-09)
 
 ### Highlights
