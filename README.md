@@ -44,7 +44,7 @@ pip install telomerehunter2
 **From source:**
 
 ```bash
-# With pip:
+# From repository:
 git clone https://github.com/ferdinand-popp/telomerehunter2.git
 cd telomerehunter2
 python -m venv venv
@@ -207,7 +207,6 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 - Docs (MkDocs / GitHub Pages): https://ferdinand-popp.github.io/telomerehunter2/
 - GitHub Wiki (optional): https://github.com/ferdinand-popp/telomerehunter2/wiki
-- Example Data: https://github.com/ferdinand-popp/telomerehunter2/tree/main/tests
 - [Telomerehunter Website](https://www.dkfz.de/angewandte-bioinformatik/telomerehunter)
 - [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
 
@@ -234,12 +233,6 @@ If you use TelomereHunter2, please cite:
 ## Contributing
 
 Fork, branch, and submit pull requests. Please add tests and follow code style. For major changes, open an issue first.
-Before submitting, please install the `tox` package and run the following checks:
-
-1. **Run Unit Tests and Style Checks**:
-   ```bash
-   tox
-   ```
 
 ## License
 
