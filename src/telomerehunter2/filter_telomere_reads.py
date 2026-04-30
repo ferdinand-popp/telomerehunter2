@@ -46,21 +46,22 @@ def is_telomere_read(
         sequence,
         repeat_threshold_calc,
 ):
-    # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
-        # Check if consecutive repeats of forward or reverse patterns in the sequence meet the repeat threshold
-        return patterns_regex_forward.search(
-            f"({patterns_regex_forward.pattern}){{{repeat_threshold_calc},}}", sequence
-        ) or patterns_regex_reverse.search(
-            f"({patterns_regex_reverse.pattern}){{{repeat_threshold_calc},}}", sequence
+        consecutive_pattern_fwd = re.compile(
+            f"(?:{patterns_regex_forward.pattern}){{{repeat_threshold_calc},}}"
+        )
+        consecutive_pattern_rev = re.compile(
+            f"(?:{patterns_regex_reverse.pattern}){{{repeat_threshold_calc},}}"
+        )
+        return bool(
+            consecutive_pattern_fwd.search(sequence)
+            or consecutive_pattern_rev.search(sequence)
         )
     else:
-        # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
-
 
 def initialize_chromosome_and_band_data(bamfile, band_file=None):
     """Initialize chromosome and band data structures for filtering.
