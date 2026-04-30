@@ -31,12 +31,22 @@ import pysam
 from telomerehunter2.utils import get_band_info, get_reverse_complement
 
 
-def compile_patterns(repeats):
-    patterns_regex_forward = "|".join(repeats)
-    patterns_regex_reverse = "|".join(
-        [get_reverse_complement(repeat) for repeat in repeats]
-    )
-    return re.compile(patterns_regex_forward), re.compile(patterns_regex_reverse)
+def compile_patterns(repeats, consecutive_flag, repeat_threshold_calc):
+    if consecutive_flag:
+        # Compile a regex that matches the repeats consecutively at least repeat_threshold_calc times
+        patterns_regex_forward = re.compile(
+            f"((?:{'|'.join(repeats)}){{{repeat_threshold_calc},}})"
+        )
+        patterns_regex_reverse = re.compile(
+            f"((?:{'|'.join([get_reverse_complement(repeat) for repeat in repeats])}){{{repeat_threshold_calc},}})"
+        )
+    else:
+        # Compile a regex that matches any repeat (for nonconsecutive counting)
+        patterns_regex_forward = re.compile("|".join(repeats))
+        patterns_regex_reverse = re.compile(
+            "|".join([get_reverse_complement(repeat) for repeat in repeats])
+        )
+    return patterns_regex_forward, patterns_regex_reverse
 
 
 def is_telomere_read(
@@ -46,22 +56,20 @@ def is_telomere_read(
         sequence,
         repeat_threshold_calc,
 ):
+    # Important filtering logic: check if read has the specified amount of patterns, else skip
     if consecutive_flag:
-        consecutive_pattern_fwd = re.compile(
-            f"(?:{patterns_regex_forward.pattern}){{{repeat_threshold_calc},}}"
-        )
-        consecutive_pattern_rev = re.compile(
-            f"(?:{patterns_regex_reverse.pattern}){{{repeat_threshold_calc},}}"
-        )
+        # Use precompiled regex for consecutive repeats
         return bool(
-            consecutive_pattern_fwd.search(sequence)
-            or consecutive_pattern_rev.search(sequence)
+            patterns_regex_forward.search(sequence)
+            or patterns_regex_reverse.search(sequence)
         )
     else:
+        # Check if the count of forward or reverse patterns in the sequence meets the repeat threshold
         return (
-            len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
-            or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
+                len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
+                or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
+
 
 def initialize_chromosome_and_band_data(bamfile, band_file=None):
     """Initialize chromosome and band data structures for filtering.
