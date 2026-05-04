@@ -506,7 +506,7 @@ def parallel_filter_telomere_reads(
             lengths = bamfile.lengths
 
         # Compile regex patterns
-        patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats)
+        patterns_regex_forward, patterns_regex_reverse = compile_patterns(repeats, consecutive_flag, repeat_threshold_calc)
 
         results = []
         max_position = 0
