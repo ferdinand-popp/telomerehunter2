@@ -63,7 +63,9 @@ See [Container Usage](#container-usage) for Docker/Apptainer instructions.
 **Operating systems:**  
 Currently tested on Linux and macOS. Windows support via WSL2 and Docker not completely tested (WIP check GitHub Issues)
 
-## Usage Bulk vs single cell Analysis
+## Usage explanation for Bulk and single cell Analysis
+
+Tutorial external data runs under [Tutorial](#tutorial)
 
 ### Bulk Analysis
 
@@ -87,7 +89,8 @@ TelomereHunter2 now supports direct single-cell BAM analysis (with CB barcode ta
 `telomerehunter2_sc -ibt sample.bam -o results/ -p SampleID -b telomerehunter2/cytoband_files/cytoband.txt --min-reads-per-barcode 10000`
 
 This will perform barcode-aware telomere analysis and output per-cell results in a summary file. The minimum reads per
-barcode threshold can be set with `--min-reads-per-barcode`. To rerun postprocessing with adjusted `--min-reads-per-barcode` 
+barcode threshold can be set with `--min-reads-per-barcode`. To rerun postprocessing with adjusted
+`--min-reads-per-barcode`
 threshold run command again with `--noFiltering` to skip the expensive filtering step from all reads to telomeric reads.
 If the reads have a different barcode tag than `CB`, use `--barcodeTag` to set the correct one.
 More information on correcting chromatin state for scATAC follows in (Engel et al., 2024).
@@ -97,6 +100,8 @@ See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 ### Usage full list of option
 
 `telomerehunter2 --help`
+
+###  
 
 ## Input & Output
 
@@ -212,15 +217,25 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 
 ## Tutorial
 
-- scATAC tutorial: WIP with publication
-- Simple run with 1000genomes data:
+- Simple run with 1000genomes WGS data:
 
-  wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+```bash
+wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
 
-  wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
 
-  telomerehunter2 -p test20vsunmapped -ibt HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -ibc HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -o /results/
+telomerehunter2 -p test20vsunmapped -ibt HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -ibc HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam -o /results/
+```
 
+- scATAC run with 10x genomics test data:
+
+```bash
+wget https://cf.10xgenomics.com/samples/cell-atac/2.1.0/10k_pbmc_ATACv2_nextgem_Chromium_Controller/10k_pbmc_ATACv2_nextgem_Chromium_Controller_possorted_bam.bam
+
+wget https://cf.10xgenomics.com/samples/cell-atac/2.1.0/10k_pbmc_ATACv2_nextgem_Chromium_Controller/10k_pbmc_ATACv2_nextgem_Chromium_Controller_possorted_bam.bam.bai
+
+telomerehunter2_sc -p scATAC_test -ibt 10k_pbmc_ATACv2_nextgem_Chromium_Controller_possorted_bam.bam -o /results/ -b telomerehunter2/cytoband_files/hg19_cytoBand.txt --min-reads-per-barcode 30000
+```
 
 ## Citation
 
