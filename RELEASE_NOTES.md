@@ -1,5 +1,12 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.8 (2026-05-06)
+
+### Highlights
+
+- README updates on single-cell ATAC tutorial
+- Bugfix for compiled regex pattern usage in filter_telomere_reads (@andreapolazzi)
+
 ## v1.0.7 (2026-04-30)
 
 ### Highlights
