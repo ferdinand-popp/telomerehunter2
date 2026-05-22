@@ -21,5 +21,6 @@ pip install telomerehunter2
 - [Intro](intro.md)
 - [Quickstart](quickstart.md)
 - [Use cases](usecases.md)
+- [scATAC annotation](single-cell_annotations.md)
 - [FAQ](faq.md)
 

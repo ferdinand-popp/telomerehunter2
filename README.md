@@ -235,6 +235,8 @@ wget https://cf.10xgenomics.com/samples/cell-atac/2.1.0/10k_pbmc_ATACv2_nextgem_
 wget https://cf.10xgenomics.com/samples/cell-atac/2.1.0/10k_pbmc_ATACv2_nextgem_Chromium_Controller/10k_pbmc_ATACv2_nextgem_Chromium_Controller_possorted_bam.bam.bai
 
 telomerehunter2_sc -p scATAC_test -ibt 10k_pbmc_ATACv2_nextgem_Chromium_Controller_possorted_bam.bam -o /results/ -b telomerehunter2/cytoband_files/hg19_cytoBand.txt --min-reads-per-barcode 30000
+
+# for generating the celltype resolution plot please generate annotation following the exemplary script at [single-cell_annotations.md](docs/single-cell_annotations.md).
 ```
 
 ## Citation
