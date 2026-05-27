@@ -4,16 +4,24 @@ repo_name: ferdinand-popp/telomerehunter2
 
 theme:
   name: material
+  features:
+    - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
 
 nav:
   - Home: index.md
   - Intro: intro.md
   - Quickstart: quickstart.md
   - Use cases: usecases.md
+  - Single cell annotations: single-cell_annotations.md
+  - Tutorial videos: tutorial_videos.md
   - FAQ: faq.md
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - toc:
       permalink: true
-
