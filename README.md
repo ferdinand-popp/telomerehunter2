@@ -211,9 +211,9 @@ For help: [GitHub Issues](https://github.com/fpopp22/telomerehunter2/issues) or 
 ## Documentation & Resources
 
 - Docs (MkDocs / GitHub Pages): https://ferdinand-popp.github.io/telomerehunter2/
-- GitHub Wiki (optional): https://github.com/ferdinand-popp/telomerehunter2/wiki
 - [Telomerehunter Website](https://www.dkfz.de/angewandte-bioinformatik/telomerehunter)
 - [Original TelomereHunter Paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2851-0)
+- For subsequent telomere insertion analysis please check out [TelomereRepeatLoci](https://github.com/ferdinand-popp/TelomereRepeatLoci)
 
 ## Tutorial
 
