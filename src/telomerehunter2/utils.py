@@ -28,6 +28,7 @@ import stat
 import sys
 import tempfile
 import time
+from importlib import resources
 
 import pandas as pd
 import pysam
@@ -94,6 +95,37 @@ def file_exists(parser, path):
     if not os.path.exists(path):
         parser.error("The file %s does not exist!" % path)
     return path
+
+
+def resolve_banding_file(parser, banding_file):
+    if banding_file is None:
+        return None
+    banding_key = banding_file.strip().lower()
+    cytoband_map = {
+        "hg19": "hg19_cytoBand.txt",
+        "hg38": "hg38_cytoBand.txt",
+    }
+    if banding_key in cytoband_map:
+        resource_name = cytoband_map[banding_key]
+        try:
+            resource_path = resources.files("telomerehunter2.cytoband_files").joinpath(
+                resource_name
+            )
+            if not resource_path.exists():
+                parser.error(
+                    f"Internal cytoband file not found for '{banding_file}'."
+                )
+            return str(resource_path)
+        except Exception:
+            fallback_path = os.path.join(
+                os.path.dirname(__file__), "cytoband_files", resource_name
+            )
+            if os.path.exists(fallback_path):
+                return fallback_path
+            parser.error(
+                f"Internal cytoband file not found for '{banding_file}'."
+            )
+    return file_exists(parser, banding_file)
 
 
 def check_banding_file(banding_file, outdir=None):

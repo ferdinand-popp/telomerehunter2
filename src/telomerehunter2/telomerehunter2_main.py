@@ -49,6 +49,7 @@ from telomerehunter2.utils import (
     file_exists,
     get_repeat_threshold_from_summary,
     print_copyright_message,
+    resolve_banding_file,
     set_execution_flags,
     validate_args,
     validate_plotting_options,
@@ -220,7 +221,7 @@ def parse_command_line_arguments():
     input_files_group.add_argument(
         "-b",
         "--bandingFile",
-        type=lambda x: file_exists(parser, x),
+        type=lambda x: resolve_banding_file(parser, x),
         dest="banding_file",
         default=None,
         help="Optional: Path to a tab-separated file with information on chromosome banding. \
@@ -228,7 +229,8 @@ def parse_command_line_arguments():
                                             the start and end position and the band name. The table should not have a header. \
                                             If no banding file is specified, scripts and plots will omit banding \
                                             information. Reference files are included for hg19 and hg38 in \
-                                            telomerehunter2/cytoband_file. For example hg19_cytoBand.txt",
+                                            telomerehunter2/cytoband_files. \
+                                            You can pass 'hg19' or 'hg38' to use the bundled references.",
     )
 
     threshold_filtering_group = parser.add_argument_group(
