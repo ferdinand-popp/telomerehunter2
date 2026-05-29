@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telomerehunter2"
-version = "1.0.8"
-description = "An advanced version of TelomereHunter for Python 3, with new features"
+version = "1.0.9"
+description = "An advanced version of TelomereHunter for Python 3. Single-cell and bulk telomere content estimation from NGS data with improved accuracy and new features."
 authors = [
   {name = "FP", email = "f.popp@dkfz.de"},
   {name = "LF", email = "l.feuerbach@dkfz.de"},

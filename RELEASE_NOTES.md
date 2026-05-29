@@ -1,5 +1,12 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.9 (2026-05-29)
+
+### Highlights
+
+- input change for parameter banding file `--banding_file`: besides a path to banding file also accepts "hg19" & "hg38" to use built in files
+- Docs: Added TelomereRepeatLoci reference to find telomeric insertions and scATAC tutorial updates to README.md. Added videos to docs.
+
 ## v1.0.8 (2026-05-06)
 
 ### Highlights
