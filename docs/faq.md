@@ -30,25 +30,11 @@ Static image export via kaleido may require chrome/chromium. If you only need TS
 
 #### Does TelomereHunter2 include built-in purity correction?
 
-No. Built-in purity correction is not implemented because the necessary information (cell-type-resolved telomere content) is typically unavailable in standard bulk WGS data. The blood control sample used as a reference is only a poor proxy for the non-tumour cells actually present in the tumour sample, which include fibroblasts, infiltrating immune cells, and endothelial cells — each with distinct telomere length distributions.
+No. Built-in purity correction is not implemented because the necessary information is typically unavailable in standard bulk WGS data. The blood control sample used as a reference is only a poor proxy for the non-tumour cells actually present in the tumour sample, which include fibroblasts, infiltrating immune cells, and endothelial cells, each with distinct telomere length distributions.
 
 #### Is linear unmixing an appropriate correction approach?
 
 It is an available approach for bulk data, but it oversimplifies the biology. A linear correction assumes the blood control equals the non-tumour telomere content in the tumour sample, which does not hold in practice. We therefore recommend using the blood control primarily to correct for age effects and inherited telomere length differences, rather than for purity correction. Single-cell sequencing methods provide more reliable cell-type-resolved estimates when purity correction is critical (see [preprint](https://www.biorxiv.org/content/10.1101/2024.08.28.609339v2.full)).
-
-#### What purity thresholds should I apply?
-
-For standard WGS data at ~60× depth:
-
-| Purity | Recommendation |
-|--------|---------------|
-| ≥ 40% | Reliable — comfortable threshold for inclusion |
-| 25–40% | Use with caution — reduced signal quality |
-| < 25% | Exclude — hard exclusion criterion |
-
-#### Practical advice for cohort analyses
-
-Strong outliers such as ALT samples or cases with dysfunction in telomere maintenance genes are usually detectable without purity correction, and can be confirmed via orthogonal features (TVRs, pathway mutations). Where statistical power is a concern, stratify your cohort into purity bands (e.g. 100–75%, 75–50%, 50–25%) and test your hypothesis within each band. If results are consistent across strata, purity is unlikely to be a major confounder.
 
 # TelomereHunter2
 
