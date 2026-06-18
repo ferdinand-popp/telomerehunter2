@@ -70,13 +70,13 @@ Tutorial external data runs under [Tutorial](#tutorial)
 ### Bulk Analysis
 
 ```bash   
-telomerehunter2 -ibt TUMOR_FILE -ibc CONTROL_FILE -o OUTPUT_DIRECTORY -p ID_OF_SAMPLE -b BANDING_FILE [options]
+telomerehunter2 -ibt TUMOR_FILE -ibc CONTROL_FILE -o OUTPUT_DIRECTORY -p ID_OF_SAMPLE -b BANDING_FILE/predefined hg19 hg28 [options]
 ```
 
 - **Single sample:**  
-  `telomerehunter2 -ibt sample.bam -o results/ -p SampleID -b telomerehunter2/cytoband_files/hg19_cytoBand.txt`
+  `telomerehunter2 -ibt sample.bam -o results/ -p SampleID -b hg19`
 - **Tumor vs Control:**  
-  `telomerehunter2 -ibt sample.bam -ibc control.bam -o results/ -p PairID -b telomerehunter2/cytoband_files/hg19_cytoBand.txt`
+  `telomerehunter2 -ibt sample.bam -ibc control.bam -o results/ -p PairID -b hg19`
 - **Custom repeats/species:**  
   `telomerehunter2 ... --repeats TTTAGGG TTAAGGG --repeatsContext TTAAGGG`
 - **Fast mode (quick overview of unmapped reads generating summary with overview):**  
@@ -108,7 +108,7 @@ See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 **Input:**
 
 - BAM/CRAM files (aligned reads, <-ibt> for tumor, <-ibc> for control)
-- Cytoband file (tab-delimited, e.g. `telomerehunter2/cytoband_files/hg19_cytoBand.txt`, <-b>)
+- Cytoband file (tab-delimited, e.g. `telomerehunter2/cytoband_files/hg19_cytoBand.txt`, or predefined option like `hg19` <-b>)
 - Identifier for sample/pair (<-p>)
 - Optional: custom telomeric repeats
 
