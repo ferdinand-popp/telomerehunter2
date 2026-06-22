@@ -1,5 +1,13 @@
 # TelomereHunter2 Release Notes
 
+## Unreleased
+
+### Bug fixes
+
+- Fixed intermittent permission errors when running multiple BAMs in parallel across screen sessions by switching to `spawn` multiprocessing start method (prevents inherited file descriptor conflicts)
+- Added retry logic for temp directory creation with clear error messages when system limits are exceeded
+- Added `PermissionError` handling in region processing loop so the job fails fast with a clear message instead of silently continuing and failing on different regions each time
+
 ## v1.0.9 (2026-05-29)
 
 ### Highlights

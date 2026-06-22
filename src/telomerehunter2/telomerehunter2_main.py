@@ -508,6 +508,8 @@ def run_telomerehunter(
 ):
     # Determine available CPU cores
     available_cores = multiprocessing.cpu_count()
+    # Use spawn start method to avoid inheriting file descriptors from parent processes
+    multiprocessing.set_start_method('spawn', force=True)
     # Determine maximum number of workers based on parallel execution setting and user input
     if args.run_parallel:
         # Divide available cores between tumor and control

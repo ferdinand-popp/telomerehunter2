@@ -21,6 +21,7 @@ import multiprocessing as mp
 import os
 import re
 import shutil
+import time
 import traceback
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -479,6 +480,10 @@ def parallel_filter_telomere_reads(
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
     """
+    # Use spawn context to avoid inheriting file descriptors from parent processes
+    # This is critical when running multiple BAMs in parallel via screen/slurm
+    mp.set_start_method('spawn', force=True)
+
     # Determine available CPU cores
     available_cores = mp.cpu_count()
     # Use num_processes if provided, else use all available cores
@@ -491,9 +496,24 @@ def parallel_filter_telomere_reads(
             f"Warning: Requested region cores ({num_workers}) exceed available cores ({available_cores}). Limiting to {available_cores}."
         )
         num_workers = available_cores
-    # Create a temporary directory within the output directory
+
+    # Create a unique temp directory with retry logic
     temp_dir = os.path.join(out_dir, f"temp_{pid}")
-    os.makedirs(temp_dir, exist_ok=True)
+    max_dir_attempts = 5
+    for i in range(max_dir_attempts):
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            break
+        except PermissionError as e:
+            if i < max_dir_attempts - 1:
+                print(f"Warning: Could not create temp dir, retrying ({i+1}/{max_dir_attempts})...")
+                time.sleep(1)
+            else:
+                raise PermissionError(
+                    f"Permission error creating temp directory after {max_dir_attempts} attempts: {e}\n"
+                    "This likely indicates too many concurrent subprocesses exceeding system limits.\n"
+                    "Try reducing --cores or running fewer BAMs simultaneously."
+                )
 
     try:
         print(f"Using {num_workers} cores for region-based parallelism")
@@ -587,6 +607,12 @@ def parallel_filter_telomere_reads(
                                 print(
                                     f"Region {result['region']} completed - {result['filtered_read_count']} reads filtered"
                                 )
+                        except PermissionError as pe:
+                            raise PermissionError(
+                                f"Permission error during region processing: {pe}\n"
+                                "This likely indicates too many concurrent subprocesses or file descriptor limits being exceeded.\n"
+                                "Try reducing --cores or running fewer BAMs simultaneously."
+                            )
                         except Exception as e:
                             print(f"Error in region processing: {e}")
                 except BrokenProcessPool as bpe:
