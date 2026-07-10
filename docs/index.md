@@ -25,3 +25,8 @@ pip install telomerehunter2
 - [Tutorial videos](tutorial_videos.md)
 - [FAQ](faq.md)
 
+## Citation
+
+- Popp, F., et al. "TelomereHunter2: Improved In silico Telomere Analysis Software for Precision Oncology and Single-cell Studies." Bioinformatics Advances (2026). https://doi.org/10.1093/bioadv/vbag187
+
+
