@@ -6,7 +6,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/ferdinand-popp/telomerehunter2/docker-multiarch.yml?branch=main)](https://github.com/ferdinand-popp/telomerehunter2/actions/workflows/docker-multiarch.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 [![Python Versions](https://img.shields.io/pypi/pyversions/telomerehunter2.svg)](https://pypi.org/project/telomerehunter2/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
+[![DOI](https://img.shields.io/badge/DOI-10.1093%2Fbioadv%2Fvbag187-blue)](https://doi.org/10.1093/bioadv/vbag187)
 [![Last Commit](https://img.shields.io/github/last-commit/ferdinand-popp/telomerehunter2.svg)](https://github.com/ferdinand-popp/telomerehunter2/commits/main)
 [![Docker Pulls](https://img.shields.io/docker/pulls/fpopp22/telomerehunter2)](https://hub.docker.com/r/fpopp22/telomerehunter2)
 
@@ -243,9 +243,9 @@ telomerehunter2_sc -p scATAC_test -ibt 10k_pbmc_ATACv2_nextgem_Chromium_Controll
 
 If you use TelomereHunter2, please cite:
 
+- Popp, F., et al. "TelomereHunter2: Improved In silico Telomere Analysis Software for Precision Oncology and Single-cell Studies." Bioinformatics Advances (2026). https://doi.org/10.1093/bioadv/vbag187
 - Feuerbach, L., et al. "TelomereHunter – in silico estimation of telomere content and composition from cancer genomes."
   BMC Bioinformatics 20, 272 (2019). https://doi.org/10.1186/s12859-019-2851-0
-- Application Note for TH2 (in preparation).
 
 ## Contributing
 
