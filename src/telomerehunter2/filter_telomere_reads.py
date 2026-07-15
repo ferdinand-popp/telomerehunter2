@@ -455,7 +455,7 @@ def process_unmapped_reads(args):
 
     if total_reads_processed == 0:
         print(
-            "!!! Warning: No unmapped reads found. Please check the input BAM/CRAM file for completeness. !!!"
+            "!!! Warning: No unmapped read pair found. Please check the input BAM/CRAM file for completeness. !!!"
         )
     else:
         print(
