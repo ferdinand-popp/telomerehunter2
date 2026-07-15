@@ -8,6 +8,7 @@
 - Added retry logic for temp directory creation with clear error messages when system limits are exceeded
 - Added `PermissionError` handling in region processing loop so the job fails fast with a clear message instead of silently continuing and failing on different regions each time
 - Updated Paper citation and doi badge in README.md
+- Clarified docs/log messages for unmapped-read scanning: per-region processing catches unmapped reads with a mapped mate, while the final EOF scan/log lines cover only the coordinate-less (both-mates-unmapped) subset, not the total unmapped-read count
 
 ## v1.0.9 (2026-05-29)
 

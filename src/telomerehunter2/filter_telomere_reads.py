@@ -342,7 +342,17 @@ def process_region(args):
 
 
 def process_unmapped_reads(args):
-    """Process unmapped reads from a BAM file starting from a specific position."""
+    """Process the coordinate-less tail of the BAM/CRAM file (reads whose mate is
+    also unmapped, so samtools coordinate-sort places them after all mapped
+    contigs, at ``start_position``/``max_position`` through EOF).
+
+    This covers only that one category of unmapped reads. Unmapped reads whose
+    mate *is* mapped are stored at the mate's coordinate and are already caught
+    by the ``is_unmapped`` check inside ``process_region`` while it scans each
+    mapped contig. Together, the per-region catches plus this EOF scan cover
+    every unmapped read in the file; the counts/prints in this function alone
+    only ever reflect the coordinate-less (both-mates-unmapped) subset.
+    """
     (
         bam_path,
         patterns_regex_forward,
@@ -448,7 +458,12 @@ def process_unmapped_reads(args):
             "!!! Warning: No unmapped reads found. Please check the input BAM/CRAM file for completeness. !!!"
         )
     else:
-        print(f"Total unmapped reads processed: {total_reads_processed}")
+        print(
+            f"Coordinate-less tail scanned: {total_reads_processed} records read, "
+            f"{read_counts['unmapped']['unmapped']} of them unmapped read pairs "
+            "(mate also unmapped; mate-mapped unmapped reads were already counted "
+            "per-region)"
+        )
 
     return {
         "region": "unmapped",
@@ -479,6 +494,18 @@ def parallel_filter_telomere_reads(
     """
     Region-based parallel implementation of telomere read filtering with improved unmapped reads handling.
     Temporary files are stored in the output directory and cleaned up after processing.
+
+    Every unmapped read in the input is scanned exactly once, split across two
+    mechanisms that together cover the whole file:
+      1. Each per-chromosome region (``process_region``) catches unmapped reads
+         whose mate is mapped there (samtools coordinate-sort places them at the
+         mate's position).
+      2. ``process_unmapped_reads`` then scans from the end of the last mapped
+         region to EOF, catching the remaining coordinate-less reads (both
+         mates unmapped).
+    The "unmapped reads"/"reads filtered" log lines printed by mechanism (2)
+    only report counts for that coordinate-less subset, not the file's total
+    unmapped-read count — do not mistake them for the grand total.
     """
     # Use spawn context to avoid inheriting file descriptors from parent processes
     # This is critical when running multiple BAMs in parallel via screen/slurm
@@ -562,7 +589,8 @@ def parallel_filter_telomere_reads(
                     for bc, count in unmapped_result.get("barcode_counts", {}).items():
                         barcode_counts_merged[bc] += count
                     print(
-                        f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                        f"Unmapped read pairs processing completed - {unmapped_result['filtered_read_count']} "
+                        "telomeric reads filtered (among coordinate-less/both-mates-unmapped reads only)"
                     )
             except Exception as e:
                 print(f"Error processing unmapped reads: {e}")
@@ -659,7 +687,8 @@ def parallel_filter_telomere_reads(
                         ).items():
                             barcode_counts_merged[bc] += count
                         print(
-                            f"Unmapped reads processing completed - {unmapped_result['filtered_read_count']} reads filtered"
+                            f"Unmapped read pairs processing completed - {unmapped_result['filtered_read_count']} "
+                            "telomeric reads filtered (among coordinate-less/both-mates-unmapped reads only)"
                         )
                 except BrokenProcessPool as bpe:
                     print(

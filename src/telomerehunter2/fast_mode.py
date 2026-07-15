@@ -50,13 +50,17 @@ def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file=Non
     temp_unmapped_bam = os.path.join(
         sample_out_dir, f"{args.pid}_{sample_name}_unmapped.bam"
     )
+    # `-f 4` extracts every read flagged unmapped regardless of stored coordinate,
+    # i.e. both mate-mapped-unmapped reads and coordinate-less (both-mates-unmapped)
+    # reads. Unlike the region-based pipeline's per-stage logs, this count is the
+    # true total of unmapped reads in the input.
     print(f"Extracting unmapped reads from {bam_path} to {temp_unmapped_bam}")
     pysam.view("-b", "-f", "4", bam_path, "-o", temp_unmapped_bam, catch_stdout=False)
     pysam.index(temp_unmapped_bam)
 
     with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
         unmapped_count = unmapped_bam.count(until_eof=True)
-    print(f"Number of unmapped reads: {unmapped_count}")
+    print(f"Number of unmapped reads (total, all unmapped reads regardless of coordinate): {unmapped_count}")
 
     with pysam.AlignmentFile(
         bam_path, "rb" if bam_path.endswith(".bam") else "rc"
