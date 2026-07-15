@@ -342,35 +342,20 @@ def run_telomerehunter2_sc(bam_file_path, extra_params=None):
 
 
 if __name__ == "__main__":
-    # Get the directory path of the current script or file
+    # Mirrors the README tutorial's "Simple run with 1000genomes WGS data" example:
+    # https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/
     script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    # Combine the script directory and data folder using os.path.join
     data_folder = os.path.join(script_dir, "data")
+    alignment_url = "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment"
 
-    # Specify testfile
-    # file_name = "HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
-    # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
-    # file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
-    # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.cram"
-    # file_name = "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522_subsampled.bam"
-    # file_name = "HG00096.combination11.bam"
-    # file_name = "test.sorted.bam"
-    # file_name = "HG00096.combination11.cram"
-    # file_name = "atac_hgmm_1k_nextgem_possorted_bam_subsampled_10pct.bam"
-    # file_name = "atac_pbmc_500_nextgem_possorted_bam.bam"
-    # file_name = "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"
-    file_name = "HG00152.alt_bwamem_GRCh38DH.20150718.GBR.low_coverage.cram"
+    tumor_file_name = "HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
+    control_file_name = "HG00096.unmapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"
 
-    bam_file_path = os.path.join(data_folder, file_name)
-    file_format = get_file_type(file_name)
+    tumor_bam_path = os.path.join(data_folder, tumor_file_name)
+    control_bam_path = os.path.join(data_folder, control_file_name)
 
-    # optional files
-    control_bam = os.path.join(data_folder, "HG00097.chrom11.ILLUMINA.bwa.GBR.low_coverage.20130415.bam")
     banding_file = os.path.join(
         script_dir, "src", "telomerehunter2", "cytoband_files", "hg19_cytoBand.txt"
-    )
-    banding_file_38 = os.path.join(
-        script_dir, "src", "telomerehunter2", "cytoband_files", "hg38_cytoBand.txt"
     )
 
     print("---------------------------")
@@ -380,75 +365,25 @@ if __name__ == "__main__":
         shutil.which("telomerehunter2") is not None
     ), "Error: telomerehunter2 not found in PATH or is not executable"
 
-    # Download if not exist yet # alternatively run wget
-    # https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
-    if not os.path.exists(bam_file_path):
-        print("Downloading testfile")
-        download_file(
-            "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/HG00096/alignment",
-            file_name,
-            data_folder,
-        )
-    else:
-        print("Testfile already present")
-
-    # Subsample if fast testing is needed
-    preprocessing = "None"
-    print(f"Preprocessing: {preprocessing}")
-    switch = {
-        "Subsample": lambda: subsample_bam(bam_file_path, file_format, fraction=0.1),
-        "Unmapped": lambda: get_unmapped_bam(bam_file_path, file_format),
-        "None": lambda: bam_file_path,
-    }
-    bam_file_path_sub = switch.get(preprocessing, lambda: print("Invalid choice"))()
-
-    assert os.path.exists(bam_file_path_sub), "Subsampled BAM file not found."
+    for file_name, bam_path in (
+        (tumor_file_name, tumor_bam_path),
+        (control_file_name, control_bam_path),
+    ):
+        if not os.path.exists(bam_path):
+            print(f"Downloading {file_name}")
+            download_file(alignment_url, file_name, data_folder)
+        else:
+            print(f"{file_name} already present")
 
     results_path = os.path.join(script_dir, "results")
     os.makedirs(results_path, exist_ok=True)
-    assert os.path.exists(results_path), "Results directory not created."
 
-    print("Running Telomerehunter2")
-    # testing the package version
-    # run_telomerehunter_package(bam_file_path_sub, results_path, "package_test", banding_file=banding_file)
-
-    # DEPRECATED DEVELOPER: testing the live dev version from python directly
-
-    # only tumor
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file])
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno", "--fast_mode"])
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file, "-pno"])
-    run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel", parameters=["-b", banding_file_38, "-pno", "-c", "8"])
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_parallel_subsample", parameters=["-b", banding_file, "-pno", "--subsample", "0.2"])
-
-    # tumor and control banding
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_control_banding",
-    #                         parameters=["-b", banding_file, "-ibc", control_bam])
-
-    # tumor and control banding
-    # run_telomerehunter_live(
-    #     bam_file_path_sub,
-    #     results_path,
-    #     "tumor_control_banding_fast",
-    #     parameters=[
-    #         "-b",
-    #         banding_file,
-    #         "-ibc",
-    #         control_bam,
-    #         "--fast_mode",
-    #         "-pno",
-    #     ],
-    # )
-
-    # tumor banding fast mode
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_banding_fast", parameters=["-b", banding_file, "--fast"])
-
-    # tumor without banding file
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_no_banding")
-
-    # tumor flexible input repeats and hexamers
-    # run_telomerehunter_live(bam_file_path_sub, results_path, "tumor_heptamers", parameters=["-r", "TTAGGGG", "TGAGGGG", "TCAGGGG", "TTGGGGG", "-bp", "21", "-rc", "TCAGGGG", "TGAGGGG", "TTGGGGG", "TTCGGGG", "TTTGGGG", "ATAGGGG", "CATGGGG", "CTAGGGG", "GTAGGGG", "TAAGGGG"])
-
-    # run_telomerehunter2_sc(bam_file_path, extra_params=["-o", results_path, "-p", "sc_th2", "-b", banding_file, "--min-reads-per-barcode", "10000"])
+    print("Running Telomerehunter2 (tumor vs. unmapped-as-control, hg19 banding)")
+    run_telomerehunter_live(
+        tumor_bam_path,
+        results_path,
+        "test20vsunmapped",
+        parameters=["-b", banding_file, "-ibc", control_bam_path, "-pno"],
+    )
 
     print("Done testing")
