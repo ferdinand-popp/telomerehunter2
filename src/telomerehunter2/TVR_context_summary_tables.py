@@ -169,10 +169,14 @@ def process_singleton_table(pattern_contexts, summary):
     else:
         singleton_table["singleton_count_tumor"] = np.nan
 
-    # Get log2 ratio of counts
-    singleton_table["singleton_count_log2_ratio"] = np.log2(
-        singleton_table["singleton_count_tumor"]
-        / singleton_table["singleton_count_control"]
+    # Get log2 ratio of counts (guard against 0/0 and division by 0)
+    singleton_table["singleton_count_log2_ratio"] = np.nan
+    condition_counts = (singleton_table["singleton_count_tumor"] != 0) & (
+        singleton_table["singleton_count_control"] != 0
+    )
+    singleton_table.loc[condition_counts, "singleton_count_log2_ratio"] = np.log2(
+        singleton_table.loc[condition_counts, "singleton_count_tumor"]
+        / singleton_table.loc[condition_counts, "singleton_count_control"]
     )
 
     # Get total reads each for normalization
@@ -194,9 +198,13 @@ def process_singleton_table(pattern_contexts, summary):
         singleton_table["singleton_count_tumor"] / total_reads_tumor
     )
 
-    singleton_table["singleton_count_log2_ratio_norm"] = np.log2(
-        singleton_table["singleton_count_tumor_norm"]
-        / singleton_table["singleton_count_control_norm"]
+    singleton_table["singleton_count_log2_ratio_norm"] = np.nan
+    condition_norm = (singleton_table["singleton_count_tumor_norm"] != 0) & (
+        singleton_table["singleton_count_control_norm"] != 0
+    )
+    singleton_table.loc[condition_norm, "singleton_count_log2_ratio_norm"] = np.log2(
+        singleton_table.loc[condition_norm, "singleton_count_tumor_norm"]
+        / singleton_table.loc[condition_norm, "singleton_count_control_norm"]
     )
 
     singleton_table["distance_to_expected_singleton_log2_ratio"] = (
