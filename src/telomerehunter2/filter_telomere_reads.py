@@ -642,7 +642,14 @@ def parallel_filter_telomere_reads(
                                 "Try reducing --cores or running fewer BAMs simultaneously."
                             )
                         except Exception as e:
-                            print(f"Error in region processing: {e}")
+                            print(
+                                f"ERROR: Region processing failed for a region: {e}\n"
+                                "Aborting - a silently dropped region would undercount "
+                                "reads for that chromosome without any indication in the output."
+                            )
+                            for f in futures:
+                                f.cancel()
+                            raise
                 except BrokenProcessPool as bpe:
                     print(
                         "ERROR: BrokenProcessPool encountered. One of the subprocesses crashed."
