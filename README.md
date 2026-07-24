@@ -16,6 +16,12 @@ provides outputs for bulk and single-cell genome sequencing data.
 
 ---
 
+<p align="center">
+  <img src="docs/images/graphical_abstract.png" alt="TelomereHunter2 graphical abstract" width="800">
+</p>
+
+---
+
 ## Release Notes
 
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the latest changes and version history.
@@ -93,7 +99,8 @@ barcode threshold can be set with `--min-reads-per-barcode`. To rerun postproces
 `--min-reads-per-barcode`
 threshold run command again with `--noFiltering` to skip the expensive filtering step from all reads to telomeric reads.
 If the reads have a different barcode tag than `CB`, use `--barcodeTag` to set the correct one.
-More information on correcting chromatin state for scATAC follows in (Engel et al., 2024).
+More information on correcting for single-cell specific biases (e.g. chromatin accessibility in scATAC) is described in the
+[bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2024.08.28.609339v2) (Engel et al., 2026).
 
 See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 
