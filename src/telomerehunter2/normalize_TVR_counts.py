@@ -95,6 +95,13 @@ def merge_and_sort_tables(pattern_table_tumor, pattern_table_control):
         how="outer",
         suffixes=("_T", "_C"),
     )
+
+    # Columns from an empty (headers-only) pattern table are read as object
+    # dtype; force all Count columns to float64 so downstream arithmetic and
+    # assignments always operate on a consistent numeric dtype.
+    count_cols = [col for col in table_merged.columns if col.startswith("Count")]
+    table_merged[count_cols] = table_merged[count_cols].astype("float64")
+
     return table_merged.sort_values(
         by=["Count_norm_by_intratel_reads_C", "Count_norm_by_intratel_reads_T"],
         ascending=[False, False],
@@ -120,12 +127,13 @@ def calculate_log2_ratios(table_merged):
         ["Count_norm_by_intratel_reads_T", "Count_norm_by_intratel_reads_C"],
     ]
 
-    table_merged.loc[condition_norm, "log2_ratio_count_norm_by_intratel_reads"] = (
-        np.log2(
-            valid_norm_values["Count_norm_by_intratel_reads_T"]
-            / valid_norm_values["Count_norm_by_intratel_reads_C"]
+    if condition_norm.any():
+        table_merged.loc[condition_norm, "log2_ratio_count_norm_by_intratel_reads"] = (
+            np.log2(
+                valid_norm_values["Count_norm_by_intratel_reads_T"]
+                / valid_norm_values["Count_norm_by_intratel_reads_C"]
+            )
         )
-    )
 
     # Ensure both columns for per-100-bp counts are valid (not NaN and not 0) for the division
     condition_100_bp = (
@@ -145,12 +153,13 @@ def calculate_log2_ratios(table_merged):
         ["Count_per_100_bp_intratel_read_T", "Count_per_100_bp_intratel_read_C"],
     ]
 
-    table_merged.loc[condition_100_bp, "log2_ratio_count_per_100_bp_intratel_read"] = (
-        np.log2(
+    if condition_100_bp.any():
+        table_merged.loc[
+            condition_100_bp, "log2_ratio_count_per_100_bp_intratel_read"
+        ] = np.log2(
             valid_100_bp_values["Count_per_100_bp_intratel_read_T"]
             / valid_100_bp_values["Count_per_100_bp_intratel_read_C"]
         )
-    )
 
     return table_merged
 

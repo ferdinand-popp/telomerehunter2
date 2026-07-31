@@ -1,5 +1,12 @@
 # TelomereHunter2 Release Notes
 
+## v1.0.11 (2026-07-31)
+
+### Highlights
+
+- Verified compatibility with Python 3.12, 3.13, and 3.14
+- Fixed a crash in TVR normalization (`normalize_TVR_counts.py`) with pandas >=3.0: an empty/placeholder TVR pattern table (e.g. samples with no intratelomeric reads) could leave merged count columns as `object` dtype, which pandas 3.0's stricter `.loc` assignment checks rejected when computing the log2 tumor/control ratios. Merged count columns are now coerced to `float64`, and the log2-ratio assignments are skipped entirely when no rows qualify
+
 ## v.1.0.10 (2026-07-15)
 
 ### Highlights

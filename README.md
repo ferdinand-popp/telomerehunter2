@@ -152,7 +152,7 @@ See `tests/test_telomerehunter2_sc.py` for example usage and validation.
 
 ## Dependencies
 
-- Python >=3.6
+- Python >=3.8 (tested through 3.14)
 - pysam, numpy, pandas, plotly, PyPDF2
 - For static image export: kaleido (requires chrome/chromium)
 - Docker/Apptainer (optional)
