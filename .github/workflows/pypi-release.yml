@@ -64,3 +64,12 @@ jobs:
           repository-url: https://upload.pypi.org/legacy/
           verbose: true
           skip-existing: true
+
+      - name: Create GitHub Release
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes  
