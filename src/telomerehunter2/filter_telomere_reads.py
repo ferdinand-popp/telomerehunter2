@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with TelomereHunter2. If not, see <http://www.gnu.org/licenses/>.
 
+from bisect import bisect_left
 import multiprocessing as mp
 import os
 import re
@@ -70,6 +71,32 @@ def is_telomere_read(
                 len(patterns_regex_forward.findall(sequence)) >= repeat_threshold_calc
                 or len(patterns_regex_reverse.findall(sequence)) >= repeat_threshold_calc
         )
+
+
+def _triplet_filter(consecutive, forward, reverse, seq, threshold):
+    # Every default repeat contains GGG, or CCC on the reverse strand.
+    if consecutive:
+        return bool(
+            (seq.count("GGG") >= threshold and forward.search(seq))
+            or (seq.count("CCC") >= threshold and reverse.search(seq))
+        )
+    return (
+        (seq.count("GGG") >= threshold and len(forward.findall(seq)) >= threshold)
+        or (seq.count("CCC") >= threshold and len(reverse.findall(seq)) >= threshold)
+    )
+
+
+def _select_read_filter(consecutive, forward, reverse, threshold):
+    repeats = ["TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"]
+    expected_forward, expected_reverse = compile_patterns(repeats, consecutive, threshold)
+    if (
+        forward.pattern == expected_forward.pattern
+        and forward.flags == expected_forward.flags
+        and reverse.pattern == expected_reverse.pattern
+        and reverse.flags == expected_reverse.flags
+    ):
+        return _triplet_filter
+    return is_telomere_read
 
 
 def initialize_chromosome_and_band_data(bamfile, band_file=None):
@@ -211,6 +238,15 @@ def process_region(args):
     ) = args
 
     chrom, start, end = region_info  # unpack tuple
+    check_telomere_read = _select_read_filter(
+        consecutive_flag, patterns_regex_forward, patterns_regex_reverse,
+        repeat_threshold_calc,
+    )
+    ref_name = chrom[3:] if chrom.startswith("chr") else chrom
+    region_bands = band_info["bands"].get(ref_name)
+    band_ends = [band["end"] for band in region_bands["bands"]] if region_bands else []
+    band_names = [band["name"] for band in region_bands["bands"]] if region_bands else []
+    band_start = band_end = float("-inf")
     region_str = f"{chrom}__{start}__{end}"
     temp_bam = os.path.join(temp_dir, f"region_{region_str}_filtered.bam")
 
@@ -267,42 +303,31 @@ def process_region(args):
                             gc_content[gc_percent] = gc_content.get(gc_percent, 0) + 1
 
                         # Process band information
-                        if is_unmapped or mapping_quality < mapq_threshold:
+                        if (
+                            is_unmapped
+                            or mapping_quality < mapq_threshold
+                            or region_bands is None
+                        ):
                             read_counts["unmapped"]["unmapped"] += 1
                         else:
-                            ref_name = read.reference_name
-                            # Remove 'chr' prefix if present for matching
-                            if ref_name.startswith("chr"):
-                                ref_name = ref_name[3:]
-
-                            if ref_name not in band_info["bands"]:
-                                read_counts["unmapped"]["unmapped"] += 1
-                            else:
-                                pos = read.reference_start
-                                bands = band_info["bands"][ref_name]["bands"]
-
-                                # Binary search for the correct band
-                                left, right = 0, len(bands) - 1
-                                found_band = None
-
-                                while left <= right:
-                                    mid = (left + right) // 2
-                                    if pos <= bands[mid]["end"]:
-                                        if mid == 0 or pos > bands[mid - 1]["end"]:
-                                            found_band = bands[mid]
-                                            break
-                                        right = mid - 1
-                                    else:
-                                        left = mid + 1
-
-                                if found_band is None:
-                                    found_band = bands[-1]
-
+                            pos = read.reference_start
+                            if not band_start < pos <= band_end:
+                                band_index = min(
+                                    bisect_left(band_ends, pos), len(band_ends) - 1
+                                )
+                                band_name = band_names[band_index]
+                                band_start = (
+                                    band_ends[band_index - 1]
+                                    if band_index > 0 else float("-inf")
+                                )
+                                band_end = (
+                                    band_ends[band_index]
+                                    if band_index < len(band_ends) - 1 else float("inf")
+                                )
                                 if ref_name not in read_counts:
                                     read_counts[ref_name] = {}
-                                if found_band["name"] not in read_counts[ref_name]:
-                                    read_counts[ref_name][found_band["name"]] = 0
-                                read_counts[ref_name][found_band["name"]] += 1
+                                counts = read_counts[ref_name]
+                            counts[band_name] = counts.get(band_name, 0) + 1
 
                         # Barcode counting
                         if singlecell_mode:
@@ -311,7 +336,7 @@ def process_region(args):
                                 barcode_counts[bc] += 1
 
                         # Check if it's a telomere read
-                        if is_telomere_read(
+                        if check_telomere_read(
                                 consecutive_flag,
                                 patterns_regex_forward,
                                 patterns_regex_reverse,
@@ -367,6 +392,10 @@ def process_unmapped_reads(args):
         barcode_tag,
     ) = args
 
+    check_telomere_read = _select_read_filter(
+        consecutive_flag, patterns_regex_forward, patterns_regex_reverse,
+        repeat_threshold_calc,
+    )
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
 
@@ -437,7 +466,7 @@ def process_unmapped_reads(args):
                                 barcode_counts[bc] += 1
 
                         # Check if it's a telomere read
-                        if is_telomere_read(
+                        if check_telomere_read(
                                 consecutive_flag,
                                 patterns_regex_forward,
                                 patterns_regex_reverse,
