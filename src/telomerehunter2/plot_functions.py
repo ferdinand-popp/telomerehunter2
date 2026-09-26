@@ -29,7 +29,10 @@ from plotly.subplots import make_subplots
 from telomerehunter2.utils import get_band_info, get_reverse_complement
 
 os.environ["KALIEDO_EXE_OPTIONS"] = "--no-sandbox"
-pio.kaleido.scope.mathjax = None
+if hasattr(pio, "defaults"):
+    pio.defaults.mathjax = None
+else:
+    pio.kaleido.scope.mathjax = None
 
 TVR_COLORS = {
     "TTAGGG": "#CB181D",
