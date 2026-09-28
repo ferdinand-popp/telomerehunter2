@@ -18,8 +18,8 @@
 # along with TelomereHunter2. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import json
+import os
 
 import pandas as pd
 import pysam
@@ -82,7 +82,9 @@ def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file=Non
     else:
         with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
             unmapped_count = unmapped_bam.count(until_eof=True)
-    print(f"Number of unmapped reads (total, all unmapped reads regardless of coordinate): {unmapped_count}")
+    print(
+        f"Number of unmapped reads (total, all unmapped reads regardless of coordinate): {unmapped_count}"
+    )
 
     if can_count:
         total_count = extraction_counts["records_processed"]
