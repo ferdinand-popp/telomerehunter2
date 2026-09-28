@@ -1,6 +1,6 @@
 # TelomereHunter2 Release Notes
 
-## Unreleased
+## v1.0.12 (2026-09-28)
 
 ### Highlights
 
@@ -10,6 +10,7 @@
   read counts from `samtools view --save-counts` during extraction instead of two extra full-file scans (@DylanCosto)
 - Fixed a Plotly 7 startup error (`pio.kaleido.scope.mathjax` was removed) while keeping compatibility with older
   Plotly versions (@DylanCosto)
+- Added official de.NBI affiliation and survey link to docs/index.md
 
 ## v1.0.11 (2026-07-31)
 
