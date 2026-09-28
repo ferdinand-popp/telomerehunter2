@@ -19,6 +19,7 @@
 
 
 import os
+import json
 
 import pandas as pd
 import pysam
@@ -55,17 +56,41 @@ def process_fast_mode_sample(args, bam_path, sample_name, out_dir, band_file=Non
     # reads. Unlike the region-based pipeline's per-stage logs, this count is the
     # true total of unmapped reads in the input.
     print(f"Extracting unmapped reads from {bam_path} to {temp_unmapped_bam}")
-    pysam.view("-b", "-f", "4", bam_path, "-o", temp_unmapped_bam, catch_stdout=False)
+    counts_path = os.path.join(sample_out_dir, "view_counts.json")
+    try:
+        can_count = tuple(
+            int(v) for v in pysam.__samtools_version__.split(".")[:2]
+        ) >= (1, 22)
+    except (AttributeError, ValueError):
+        can_count = False
+    view_args = ["-b", "-f", "4", bam_path, "-o", temp_unmapped_bam]
+    available_cores = os.cpu_count() or 1
+    cores = available_cores if args.cores is None else min(args.cores, available_cores)
+    if cores > 1:
+        view_args += ["-@", str(cores - 1)]
+    if can_count:
+        view_args += ["--save-counts", counts_path]
+    pysam.view(*view_args, catch_stdout=False)
+    if can_count:
+        with open(counts_path) as count_file:
+            extraction_counts = json.load(count_file)
+        os.remove(counts_path)
     pysam.index(temp_unmapped_bam)
 
-    with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
-        unmapped_count = unmapped_bam.count(until_eof=True)
+    if can_count:
+        unmapped_count = extraction_counts["records_filter_accepted"]
+    else:
+        with pysam.AlignmentFile(temp_unmapped_bam, "rb") as unmapped_bam:
+            unmapped_count = unmapped_bam.count(until_eof=True)
     print(f"Number of unmapped reads (total, all unmapped reads regardless of coordinate): {unmapped_count}")
 
-    with pysam.AlignmentFile(
-        bam_path, "rb" if bam_path.endswith(".bam") else "rc"
-    ) as bam_file:
-        total_count = bam_file.count(until_eof=True)
+    if can_count:
+        total_count = extraction_counts["records_processed"]
+    else:
+        with pysam.AlignmentFile(
+            bam_path, "rb" if bam_path.endswith(".bam") else "rc"
+        ) as bam_file:
+            total_count = bam_file.count(until_eof=True)
     print(f"Total number of reads in input: {total_count}")
 
     (_, read_lengths, _, _, _, _, repeat_threshold) = (
