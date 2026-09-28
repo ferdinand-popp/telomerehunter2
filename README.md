@@ -264,6 +264,7 @@ GNU General Public License v3.0. See [LICENSE](LICENSE.txt).
 
 ## Contact
 
+- telomerehunter@dkfz.de
 - Ferdinand Popp (f.popp@dkfz.de)
 - Lars Feuerbach (l.feuerbach@dkfz.de)
 
@@ -271,6 +272,7 @@ GNU General Public License v3.0. See [LICENSE](LICENSE.txt).
 
 Developed by Ferdinand Popp, Lina Sieverling, Philip Ginsbach, Lars Feuerbach. Supported by German Cancer Research
 Center (DKFZ) - Division Applied Bioinformatics.
+This is an approved de.NBI service. Please help us improve by taking our short user survey on our [Wiki](https://ferdinand-popp.github.io/telomerehunter2/).
 
 ---
 

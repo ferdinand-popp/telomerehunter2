@@ -25,6 +25,10 @@ pip install telomerehunter2
 - [Tutorial videos](tutorial_videos.md)
 - [FAQ](faq.md)
 
+## Support
+<img src="images/denbi-logo.svg" alt="de.NBI logo" width="78" style="vertical-align: middle; margin-right: 8px;">
+This is an approved de.NBI service. Please help us improve by taking our short user survey: [Survey](https://www.surveymonkey.de/r/denbi-service?sc=hd-hub&tool=telomerehunter)
+
 ## Citation
 
 - Popp, F., et al. "TelomereHunter2: Improved In silico Telomere Analysis Software for Precision Oncology and Single-cell Studies." Bioinformatics Advances (2026). https://doi.org/10.1093/bioadv/vbag187
