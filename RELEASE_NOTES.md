@@ -1,5 +1,16 @@
 # TelomereHunter2 Release Notes
 
+## Unreleased
+
+### Highlights
+
+- Sped up BAM screening and fast mode: per-region cytoband lookups are now cached instead of re-running a binary
+  search for every read, and a fast GGG/CCC triplet pre-check short-circuits the regex match for the default
+  telomere repeats before falling back to the full regex-based check for any custom `--repeats`. Fast mode now reuses
+  read counts from `samtools view --save-counts` during extraction instead of two extra full-file scans (@DylanCosto)
+- Fixed a Plotly 7 startup error (`pio.kaleido.scope.mathjax` was removed) while keeping compatibility with older
+  Plotly versions (@DylanCosto)
+
 ## v1.0.11 (2026-07-31)
 
 ### Highlights
