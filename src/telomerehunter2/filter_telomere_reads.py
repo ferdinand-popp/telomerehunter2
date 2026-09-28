@@ -74,7 +74,11 @@ def is_telomere_read(
 
 
 def _triplet_filter(consecutive, forward, reverse, seq, threshold):
-    # Every default repeat contains GGG, or CCC on the reverse strand.
+    # Every one of _TRIPLET_SAFE_REPEATS starts with T and its reverse complement
+    # ends in A, so no external GGG/CCC run can bleed across a repeat-unit
+    # boundary: a regex match on these repeats always implies the matched region
+    # alone contributes enough GGG/CCC triplets to clear the threshold. That lets
+    # us cheaply rule out most reads before paying for the regex search/findall.
     if consecutive:
         return bool(
             (seq.count("GGG") >= threshold and forward.search(seq))
@@ -85,17 +89,20 @@ def _triplet_filter(consecutive, forward, reverse, seq, threshold):
     ) or (seq.count("CCC") >= threshold and len(reverse.findall(seq)) >= threshold)
 
 
-def _select_read_filter(consecutive, forward, reverse, threshold):
-    repeats = ["TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"]
-    expected_forward, expected_reverse = compile_patterns(
-        repeats, consecutive, threshold
-    )
-    if (
-        forward.pattern == expected_forward.pattern
-        and forward.flags == expected_forward.flags
-        and reverse.pattern == expected_reverse.pattern
-        and reverse.flags == expected_reverse.flags
-    ):
+# The only repeat set for which _triplet_filter's shortcut is valid (see its
+# docstring above). This is a property of that specific set of literals, not a
+# copy of the CLI's default --repeats value, so it does not need to track
+# telomerehunter2_main.py's argparse default. _select_read_filter is handed the
+# actual --repeats value the user ran with and only enables the shortcut when it
+# matches this set exactly (order-independent); any other repeat set safely
+# falls back to is_telomere_read.
+_TRIPLET_SAFE_REPEATS = frozenset(
+    {"TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"}
+)
+
+
+def _select_read_filter(repeats):
+    if frozenset(repeats) == _TRIPLET_SAFE_REPEATS:
         return _triplet_filter
     return is_telomere_read
 
@@ -226,6 +233,7 @@ def process_region(args):
     (
         bam_path,
         region_info,
+        repeats,
         patterns_regex_forward,
         patterns_regex_reverse,
         consecutive_flag,
@@ -239,12 +247,7 @@ def process_region(args):
     ) = args
 
     chrom, start, end = region_info  # unpack tuple
-    check_telomere_read = _select_read_filter(
-        consecutive_flag,
-        patterns_regex_forward,
-        patterns_regex_reverse,
-        repeat_threshold_calc,
-    )
+    check_telomere_read = _select_read_filter(repeats)
     ref_name = chrom[3:] if chrom.startswith("chr") else chrom
     region_bands = band_info["bands"].get(ref_name)
     band_ends = [band["end"] for band in region_bands["bands"]] if region_bands else []
@@ -387,6 +390,7 @@ def process_unmapped_reads(args):
     """
     (
         bam_path,
+        repeats,
         patterns_regex_forward,
         patterns_regex_reverse,
         consecutive_flag,
@@ -399,12 +403,7 @@ def process_unmapped_reads(args):
         barcode_tag,
     ) = args
 
-    check_telomere_read = _select_read_filter(
-        consecutive_flag,
-        patterns_regex_forward,
-        patterns_regex_reverse,
-        repeat_threshold_calc,
-    )
+    check_telomere_read = _select_read_filter(repeats)
     region_name = "unmapped"
     temp_bam = os.path.join(temp_dir, f"region_{region_name}_filtered.bam")
 
@@ -612,6 +611,7 @@ def parallel_filter_telomere_reads(
             )
             unmapped_args = (
                 bam_path,
+                repeats,
                 patterns_regex_forward,
                 patterns_regex_reverse,
                 consecutive_flag,
@@ -647,6 +647,7 @@ def parallel_filter_telomere_reads(
                     args = (
                         bam_path,
                         region_info,
+                        repeats,
                         patterns_regex_forward,
                         patterns_regex_reverse,
                         consecutive_flag,
@@ -713,6 +714,7 @@ def parallel_filter_telomere_reads(
             print(f"Processing unmapped reads from position: {max_position}")
             unmapped_args = (
                 bam_path,
+                repeats,
                 patterns_regex_forward,
                 patterns_regex_reverse,
                 consecutive_flag,
