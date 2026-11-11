@@ -57,16 +57,16 @@ from telomerehunter2.utils import (
 
 
 def run_sample(
-        sample_name,
-        sample_bam,
-        outdir_sample,
-        sample_id,
-        read_length,
-        repeat_threshold_calc,
-        repeat_threshold_str,
-        filter_telomere_reads_flag,
-        region_cores,
-        args,
+    sample_name,
+    sample_bam,
+    outdir_sample,
+    sample_id,
+    read_length,
+    repeat_threshold_calc,
+    repeat_threshold_str,
+    filter_telomere_reads_flag,
+    region_cores,
+    args,
 ):
     try:
         if getattr(args, "singlecell_mode", False):
@@ -325,8 +325,8 @@ def parse_command_line_arguments():
         dest="repeats",
         type=str,
         help="Base sequences to inspect like TTAGGG and its TVRs. First sequence is /"
-             "used as base telomeric sequence. Default: ['TTAGGG', 'TGAGGG', 'TCAGGG', /"
-             "'TTCGGG', 'TTGGGG'].",
+        "used as base telomeric sequence. Default: ['TTAGGG', 'TGAGGG', 'TCAGGG', /"
+        "'TTCGGG', 'TTGGGG'].",
         default=["TTAGGG", "TGAGGG", "TCAGGG", "TTGGGG", "TTCGGG", "TTTGGG"],
     )
     repeats_context_group.add_argument(
@@ -494,22 +494,22 @@ def parse_command_line_arguments():
 
 
 def run_telomerehunter(
-        args,
-        control_bam,
-        filter_telomere_reads_control,
-        filter_telomere_reads_tumor,
-        read_lengths_control,
-        read_lengths_tumor,
-        repeat_thresholds_control,
-        repeat_thresholds_str_control,
-        repeat_thresholds_str_tumor,
-        repeat_thresholds_tumor,
-        tumor_bam,
+    args,
+    control_bam,
+    filter_telomere_reads_control,
+    filter_telomere_reads_tumor,
+    read_lengths_control,
+    read_lengths_tumor,
+    repeat_thresholds_control,
+    repeat_thresholds_str_control,
+    repeat_thresholds_str_tumor,
+    repeat_thresholds_tumor,
+    tumor_bam,
 ):
     # Determine available CPU cores
     available_cores = multiprocessing.cpu_count()
     # Use spawn start method to avoid inheriting file descriptors from parent processes
-    multiprocessing.set_start_method('spawn', force=True)
+    multiprocessing.set_start_method("spawn", force=True)
     # Determine maximum number of workers based on parallel execution setting and user input
     if args.run_parallel:
         # Divide available cores between tumor and control
@@ -532,9 +532,9 @@ def run_telomerehunter(
         submitted_futures = []
         # run tumor sample for PID
         if args.tumor_flag and (
-                filter_telomere_reads_tumor
-                or args.sort_telomere_reads_flag
-                or args.estimate_telomere_content_flag
+            filter_telomere_reads_tumor
+            or args.sort_telomere_reads_flag
+            or args.estimate_telomere_content_flag
         ):
             tumor_sample_id = "tumor"
             tumor_output_dir = os.path.join(
@@ -564,9 +564,9 @@ def run_telomerehunter(
 
         # run control samples for PID
         if args.control_flag and (
-                filter_telomere_reads_control
-                or args.sort_telomere_reads_flag
-                or args.estimate_telomere_content_flag
+            filter_telomere_reads_control
+            or args.sort_telomere_reads_flag
+            or args.estimate_telomere_content_flag
         ):
             control_sample_id = "control"
             control_output_dir = os.path.join(
@@ -611,8 +611,8 @@ def summary_log2(main_path, pid):
         col
         for col in summary.columns
         if col == "tel_content"
-           or "_arbitrary_context_norm_by_intratel_reads" in col
-           or "_singletons_norm_by_all_reads" in col
+        or "_arbitrary_context_norm_by_intratel_reads" in col
+        or "_singletons_norm_by_all_reads" in col
     ]
 
     # Indices for log2 columns

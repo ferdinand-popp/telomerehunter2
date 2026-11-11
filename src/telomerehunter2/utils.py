@@ -112,9 +112,7 @@ def resolve_banding_file(parser, banding_file):
                 resource_name
             )
             if not resource_path.exists():
-                parser.error(
-                    f"Internal cytoband file not found for '{banding_file}'."
-                )
+                parser.error(f"Internal cytoband file not found for '{banding_file}'.")
             return str(resource_path)
         except Exception:
             fallback_path = os.path.join(
@@ -122,9 +120,7 @@ def resolve_banding_file(parser, banding_file):
             )
             if os.path.exists(fallback_path):
                 return fallback_path
-            parser.error(
-                f"Internal cytoband file not found for '{banding_file}'."
-            )
+            parser.error(f"Internal cytoband file not found for '{banding_file}'.")
     return file_exists(parser, banding_file)
 
 

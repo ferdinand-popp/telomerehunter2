@@ -98,7 +98,9 @@ def count_reads_per_barcode_in_bamfiles(bam_files, barcodes, barcode_tag="CB"):
                         print(
                             f"Processed {read_count} reads, matched {barcode_matched} to barcodes"
                         )
-                    bc = read.get_tag(barcode_tag) if read.has_tag(barcode_tag) else None
+                    bc = (
+                        read.get_tag(barcode_tag) if read.has_tag(barcode_tag) else None
+                    )
                     if bc in barcode_counts:
                         barcode_counts[bc][bam_type] += 1
                         barcode_matched += 1
@@ -111,11 +113,11 @@ def count_reads_per_barcode_in_bamfiles(bam_files, barcodes, barcode_tag="CB"):
 
 
 def screen_bam_all_barcodes(
-        intratel_bam_path,
-        TVR_HEXAMERS,
-        repeat_threshold_used=6,
-        qual_threshold=DEFAULT_QUALITY_THRESHOLD,
-        barcode_tag="CB",
+    intratel_bam_path,
+    TVR_HEXAMERS,
+    repeat_threshold_used=6,
+    qual_threshold=DEFAULT_QUALITY_THRESHOLD,
+    barcode_tag="CB",
 ):
     """
     Screen intratelomeric BAM for TVR hexamers and singletons for all barcodes in a single pass.
@@ -185,13 +187,13 @@ def screen_bam_all_barcodes(
                 if i + 6 > len(seq):  # Ensure we don't go past end of sequence
                     continue
 
-                pattern_segment = seq[i: i + 6]
+                pattern_segment = seq[i : i + 6]
 
                 # Skip patterns with N or low quality
                 if "N" in pattern_segment:
                     continue
 
-                q_scores = qual[i: i + 6]
+                q_scores = qual[i : i + 6]
                 if any(q < qual_threshold for q in q_scores):
                     continue
 
@@ -201,11 +203,11 @@ def screen_bam_all_barcodes(
 
                     # Check for singleton (TVR flanked by canonical repeats)
                     if i >= 18 and i + 24 <= len(seq):
-                        flank_left = seq[i - 18: i]
-                        flank_right = seq[i + 6: i + 24]
+                        flank_left = seq[i - 18 : i]
+                        flank_right = seq[i + 6 : i + 24]
                         if (
-                                flank_left == CANONICAL_REPEAT * 3
-                                and flank_right == CANONICAL_REPEAT * 3
+                            flank_left == CANONICAL_REPEAT * 3
+                            and flank_right == CANONICAL_REPEAT * 3
                         ):
                             barcode_singleton_counts[bc][pattern_segment] += 1
 
@@ -216,15 +218,15 @@ def screen_bam_all_barcodes(
 
 
 def prepare_summary(
-        barcodes_above,
-        barcode_df,
-        barcode_counts,
-        barcode_tvr_counts,
-        barcode_singleton_counts,
-        barcode_total_intratelomeric_bp,
-        args_th2,
-        summary_df,
-        TVR_HEXAMERS,
+    barcodes_above,
+    barcode_df,
+    barcode_counts,
+    barcode_tvr_counts,
+    barcode_singleton_counts,
+    barcode_total_intratelomeric_bp,
+    args_th2,
+    summary_df,
+    TVR_HEXAMERS,
 ):
     """
     Prepare a summary dataframe for each barcode with telomere content, TVR occurrences, and singleton variants.
@@ -266,14 +268,14 @@ def prepare_summary(
 
         # Calculate telomere read count and content
         tel_read_count = (
-                intratelomeric_reads
-                + junctionspanning_reads
-                + subtelomeric_reads
-                + intrachromosomal_reads
+            intratelomeric_reads
+            + junctionspanning_reads
+            + subtelomeric_reads
+            + intrachromosomal_reads
         )
         bc_total_reads_with_tel_gc = (
-                                             total_reads_with_tel_gc / total_reads
-                                     ) * bc_total_reads
+            total_reads_with_tel_gc / total_reads
+        ) * bc_total_reads
         tel_content = (
             (float(intratelomeric_reads) / float(bc_total_reads_with_tel_gc) * 1e6)
             if bc_total_reads_with_tel_gc > 0
@@ -399,7 +401,7 @@ def main():
     # Filter barcodes by read count threshold
     barcodes_above = barcode_df[
         barcode_df["read_count"] >= args_th2.min_reads_per_barcode
-        ]["barcode"].tolist()
+    ]["barcode"].tolist()
     print(
         f"Barcodes above threshold ({args_th2.min_reads_per_barcode} reads): {len(barcodes_above)}"
     )
