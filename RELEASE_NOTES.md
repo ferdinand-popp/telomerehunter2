@@ -1,6 +1,6 @@
 # TelomereHunter2 Release Notes
 
-## Unreleased
+## v1.0.13 (2026-11-11)
 
 ### Highlights
 
