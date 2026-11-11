@@ -10,6 +10,7 @@
   telomeric reads). The `unmapped` row is now looked up by name, and the count is 0 if it is missing. Runs with a
   banding file (e.g. `-b hg19`/`hg38`) were not affected. Added unit tests for the spectrum-file parsing (#27,
   reported by @nancybird)
+- Applied `ruff format` to `src` (formatting only, no functional changes)
 
 ## v1.0.12 (2026-09-28)
 
