@@ -20,7 +20,6 @@
 import csv
 import os
 
-import numpy
 import pandas as pd
 import pysam
 
@@ -201,18 +200,23 @@ def get_telomere_counts(input_dir, pid):
     """
     spectrum_file = os.path.join(input_dir, f"{pid}_spectrum.tsv")
     try:
-        data_tel_reads = numpy.loadtxt(spectrum_file, usecols=2, skiprows=1)
+        # Look the "unmapped" row up by name: its position in the file is only
+        # guaranteed to be last when a banding file is used (without one, rows
+        # follow dict insertion order), and it is absent if there are no
+        # unmapped/low-MAPQ telomeric reads.
+        tel_read_count = 0
+        intratel_read_count = 0
 
-        if data_tel_reads.size == 0:
-            return 0, 0
-
-        tel_read_count = int(data_tel_reads.sum())
-
-        # get unmapped_reads count
-        if data_tel_reads.size != 1:
-            intratel_read_count = int(data_tel_reads[-1])
-        else:
-            intratel_read_count = int(data_tel_reads.item())
+        with open(spectrum_file, "rt") as tsvin:
+            reader = csv.reader(tsvin, delimiter="\t")
+            next(reader, None)  # skip the header
+            for row in reader:
+                if len(row) < 3:
+                    continue
+                reads_with_pattern = int(float(row[2]))
+                tel_read_count += reads_with_pattern
+                if row[0] == "unmapped":
+                    intratel_read_count += reads_with_pattern
 
         return tel_read_count, intratel_read_count
 
