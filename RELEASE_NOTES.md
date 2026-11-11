@@ -1,5 +1,16 @@
 # TelomereHunter2 Release Notes
 
+## Unreleased
+
+### Highlights
+
+- Fixed an incorrect `tel_content` when running without a banding file (`-b` omitted): `get_telomere_counts()` took the
+  last row of `_spectrum.tsv` as the unmapped/intratelomeric read count, but without a banding file the rows follow
+  insertion order, so the `unmapped` row is not necessarily last (and is absent if there are no unmapped/low-MAPQ
+  telomeric reads). The `unmapped` row is now looked up by name, and the count is 0 if it is missing. Runs with a
+  banding file (e.g. `-b hg19`/`hg38`) were not affected. Added unit tests for the spectrum-file parsing (#27,
+  reported by @nancybird)
+
 ## v1.0.12 (2026-09-28)
 
 ### Highlights
